@@ -347,8 +347,13 @@
             "enumeration": [
               {
                 "value": "share",
-                "displayName": "Share",
+                "displayName": "Share of the column",
                 "displayNameKey": "Enum_lc_share"
+              },
+              {
+                "value": "total",
+                "displayName": "% of the total",
+                "displayNameKey": "Enum_lc_total"
               },
               {
                 "value": "value",

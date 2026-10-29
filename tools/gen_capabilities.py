@@ -47,7 +47,7 @@ OBJECTS = [
     ]),
     ("labels", "Cell labels", [
         ("show", "Show", "bool"),
-        ("content", "Show", E(("share", "Enum_lc_share", "Share"), ("value", "Enum_lc_value", "Value"), ("both", "Enum_lc_both", "Value and share"),
+        ("content", "Show", E(("share", "Enum_lc_share", "Share of the column"), ("total", "Enum_lc_total", "% of the total"), ("value", "Enum_lc_value", "Value"), ("both", "Enum_lc_both", "Value and share"),
                               ("name", "Enum_lc_name", "Series name and share"))),
         ("fontSize", "Text size", "num"),
         ("color", "Text color (empty = automatic)", "color"),

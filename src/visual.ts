@@ -802,7 +802,7 @@ export class Visual implements IVisual {
 
                 // Etiqueta de la celda, solo si cabe
                 if (s.labels && !small) {
-                    const txt = this.cellLabel(s, se, cell, share);
+                    const txt = this.cellLabel(s, se, cell, share, grand);
                     const chg = showChange && cell.cmp !== null && c.cmpTotal ? this.pp(share - cell.cmp / c.cmpTotal) : "";
                     const lines = chg ? 2 : 1;
                     const needW = Math.max(this.textW(txt, fl), chg ? this.textW(chg, fl - 1) : 0) + 6;
@@ -851,10 +851,12 @@ export class Visual implements IVisual {
         }
     }
 
-    private cellLabel(s: Settings, se: Series, cell: Cell, share: number): string {
+    private cellLabel(s: Settings, se: Series, cell: Cell, share: number, grand: number): string {
         const d = clamp(Math.round(s.labelDecimals), 0, 3);
         switch (s.labelContent) {
             case "value": return this.shortFmt(cell.value);
+            // El área de la celda ya es su parte del mercado: aquí se escribe ese número
+            case "total": return this.pct(grand ? cell.value / grand : 0, d);
             case "both": return this.shortFmt(cell.value) + " · " + this.pct(share, d);
             case "name": return se.name + " " + this.pct(share, d);
             default: return this.pct(share, d);
@@ -1193,7 +1195,10 @@ export class Visual implements IVisual {
         items.push({ displayName: this.lastDv?.metadata?.columns?.find(c => c.roles?.["value"])?.displayName || this.t("Role_value", "Value"), value: f(cell.value) });
         if (col) {
             items.push({ displayName: this.t("UI_ShareOfColumn", "Share of {0}").replace("{0}", cell.col), value: this.pct(cell.value / col.total, 1) });
-            if (grand) items.push({ displayName: this.t("UI_ColumnSize", "{0}, % of the total").replace("{0}", cell.col), value: this.pct(col.total / grand, 1) });
+            if (grand) {
+                items.push({ displayName: this.t("UI_CellOfTotal", "% of the total"), value: this.pct(cell.value / grand, 1) });
+                items.push({ displayName: this.t("UI_ColumnSize", "{0}, % of the total").replace("{0}", cell.col), value: this.pct(col.total / grand, 1) });
+            }
             if (this.proActive && cell.cmp !== null && col.cmpTotal) {
                 const prev = cell.cmp / col.cmpTotal;
                 items.push({ displayName: this.t("UI_PrevShare", "Share in the comparison period"), value: this.pct(prev, 1) });
@@ -1556,7 +1561,7 @@ export class Visual implements IVisual {
             ]),
             card("labels", "Cell labels", [
                 tog("labels", "show", "Show", s.labels),
-                dd("labels", "content", "Show", s.labelContent, [["share", "Enum_lc_share", "Share"], ["value", "Enum_lc_value", "Value"],
+                dd("labels", "content", "Show", s.labelContent, [["share", "Enum_lc_share", "Share of the column"], ["total", "Enum_lc_total", "% of the total"], ["value", "Enum_lc_value", "Value"],
                     ["both", "Enum_lc_both", "Value and share"], ["name", "Enum_lc_name", "Series name and share"]]),
                 num("labels", "fontSize", "Text size", s.labelFont),
                 col("labels", "color", "Text color (empty = automatic)", s.labelColor),
