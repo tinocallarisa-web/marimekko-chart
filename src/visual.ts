@@ -733,7 +733,9 @@ export class Visual implements IVisual {
         if (vertical) {
             if (showAxis) mL += Math.min(W * 0.12, this.textW(absolute ? this.shortFmt(maxCol) : "100%", fa) + 6);
             if (s.colLabels) mB += fc + 6;
-            if (showTotals) mT += ft + 6 + (s.totalsPct ? 0 : 0);
+            if (showTotals) mT += ft + 6;
+            // La etiqueta "100%" se centra en el borde superior: sin este margen pisa el título del panel
+            if (showAxis) mT = Math.max(mT, fa * 0.6 + 3);
         } else {
             if (s.colLabels) mL += Math.min(W * 0.3, longest + 8);
             if (showAxis) mB += fa + 6;
