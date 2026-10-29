@@ -1,0 +1,41 @@
+{
+  "visual": {
+    "name": "marimekkoChartTCViz",
+    "displayName": "Marimekko & Mekko Chart by TCViz",
+    "guid": "marimekkoTCViz8C3F347D9AB541A7A0341C8BA94021AE",
+    "visualClassName": "Visual",
+    "version": "1.0.0.0",
+    "description": "A Marimekko (Mekko) chart for market structure: column width is the size of each segment, the stack is who shares it. Free draws the full chart with three named series and Others. Pro adds up to 12 series, your company highlighted with a summary sentence, share change against a prior period and small multiples.",
+    "supportUrl": "https://tinocallarisa-web.github.io/marimekko-chart/support.html",
+    "privacyTermsLink": "https://tinocallarisa-web.github.io/marimekko-chart/privacy.html",
+    "gitHubUrl": "https://github.com/tinocallarisa-web/marimekko-chart"
+  },
+  "author": {
+    "name": "TCViz",
+    "email": "support@tcviz.com"
+  },
+  "apiVersion": "5.11.1",
+  "assets": {
+    "icon": "assets/icon.png"
+  },
+  "externalJS": [],
+  "stringResources": [
+    "stringResources/en-US/resources.resjson",
+    "stringResources/es-ES/resources.resjson",
+    "stringResources/fr-FR/resources.resjson",
+    "stringResources/de-DE/resources.resjson",
+    "stringResources/it-IT/resources.resjson",
+    "stringResources/pt-BR/resources.resjson",
+    "stringResources/nl-NL/resources.resjson",
+    "stringResources/pl-PL/resources.resjson",
+    "stringResources/ja-JP/resources.resjson",
+    "stringResources/zh-CN/resources.resjson",
+    "stringResources/ko-KR/resources.resjson",
+    "stringResources/pt-PT/resources.resjson"
+  ],
+  "style": "style/visual.less",
+  "capabilities": "capabilities.json",
+  "privacyTerms": {
+    "link": "https://tinocallarisa-web.github.io/marimekko-chart/privacy.html"
+  }
+}

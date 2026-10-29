@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.tmp/
+_releases/
+webpack.statistics.*.html
+tools/__pycache__/
+*.pbix

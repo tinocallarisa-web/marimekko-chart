@@ -1,0 +1,770 @@
+{
+  "dataRoles": [
+    {
+      "name": "category",
+      "kind": "Grouping",
+      "displayName": "Columns (segments)",
+      "displayNameKey": "Role_category",
+      "description": "The segments of the market: channel, region, category. Each column is as wide as its share of the total.",
+      "descriptionKey": "Role_category_Desc"
+    },
+    {
+      "name": "series",
+      "kind": "Grouping",
+      "displayName": "Series (stack)",
+      "displayNameKey": "Role_series",
+      "description": "Who shares each segment: company, brand, competitor. Free names 3 and sums the rest in Others; Pro up to 12.",
+      "descriptionKey": "Role_series_Desc"
+    },
+    {
+      "name": "value",
+      "kind": "Measure",
+      "displayName": "Value",
+      "displayNameKey": "Role_value",
+      "description": "Sales, volume or units. One measure.",
+      "descriptionKey": "Role_value_Desc"
+    },
+    {
+      "name": "comparison",
+      "kind": "Measure",
+      "displayName": "Comparison value (Pro)",
+      "displayNameKey": "Role_comparison",
+      "description": "The same measure for another period, for the change in share in percentage points.",
+      "descriptionKey": "Role_comparison_Desc"
+    },
+    {
+      "name": "panel",
+      "kind": "Grouping",
+      "displayName": "Small multiples (Pro)",
+      "displayNameKey": "Role_panel",
+      "description": "One chart per value, on a shared scale.",
+      "descriptionKey": "Role_panel_Desc"
+    },
+    {
+      "name": "tooltips",
+      "kind": "Measure",
+      "displayName": "Tooltips",
+      "displayNameKey": "Role_tooltips",
+      "description": "Extra values in the tooltip, up to 10.",
+      "descriptionKey": "Role_tooltips_Desc"
+    }
+  ],
+  "dataViewMappings": [
+    {
+      "conditions": [
+        {
+          "category": {
+            "max": 1
+          },
+          "series": {
+            "max": 1
+          },
+          "value": {
+            "max": 1
+          },
+          "comparison": {
+            "max": 1
+          },
+          "panel": {
+            "max": 1
+          },
+          "tooltips": {
+            "max": 10
+          }
+        }
+      ],
+      "categorical": {
+        "categories": {
+          "select": [
+            {
+              "bind": {
+                "to": "category"
+              }
+            },
+            {
+              "bind": {
+                "to": "series"
+              }
+            },
+            {
+              "bind": {
+                "to": "panel"
+              }
+            }
+          ],
+          "dataReductionAlgorithm": {
+            "window": {
+              "count": 30000
+            }
+          }
+        },
+        "values": {
+          "select": [
+            {
+              "bind": {
+                "to": "value"
+              }
+            },
+            {
+              "bind": {
+                "to": "comparison"
+              }
+            },
+            {
+              "bind": {
+                "to": "tooltips"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "objects": {
+    "style": {
+      "displayName": "Style template",
+      "displayNameKey": "Obj_style",
+      "properties": {
+        "template": {
+          "displayName": "Template",
+          "displayNameKey": "Prop_style_template",
+          "type": {
+            "enumeration": [
+              {
+                "value": "clean",
+                "displayName": "Clean",
+                "displayNameKey": "Enum_tpl_clean"
+              },
+              {
+                "value": "classic",
+                "displayName": "Classic",
+                "displayNameKey": "Enum_tpl_classic"
+              },
+              {
+                "value": "minimal",
+                "displayName": "Minimal",
+                "displayNameKey": "Enum_tpl_minimal"
+              },
+              {
+                "value": "contrast",
+                "displayName": "Contrast",
+                "displayNameKey": "Enum_tpl_contrast"
+              },
+              {
+                "value": "compact",
+                "displayName": "Compact",
+                "displayNameKey": "Enum_tpl_compact"
+              },
+              {
+                "value": "ibcs",
+                "displayName": "IBCS style",
+                "displayNameKey": "Enum_tpl_ibcs"
+              }
+            ]
+          }
+        },
+        "guide": {
+          "displayName": "Setup guide",
+          "displayNameKey": "Prop_style_guide",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "layout": {
+      "displayName": "Layout",
+      "displayNameKey": "Obj_layout",
+      "properties": {
+        "orientation": {
+          "displayName": "Orientation",
+          "displayNameKey": "Prop_layout_orientation",
+          "type": {
+            "enumeration": [
+              {
+                "value": "vertical",
+                "displayName": "Columns (vertical)",
+                "displayNameKey": "Enum_or_vertical"
+              },
+              {
+                "value": "horizontal",
+                "displayName": "Bars (horizontal)",
+                "displayNameKey": "Enum_or_horizontal"
+              }
+            ]
+          }
+        },
+        "mode": {
+          "displayName": "Values",
+          "displayNameKey": "Prop_layout_mode",
+          "type": {
+            "enumeration": [
+              {
+                "value": "percent",
+                "displayName": "100% (share)",
+                "displayNameKey": "Enum_md_percent"
+              },
+              {
+                "value": "absolute",
+                "displayName": "Absolute (bar Mekko)",
+                "displayNameKey": "Enum_md_absolute"
+              }
+            ]
+          }
+        },
+        "gap": {
+          "displayName": "Space between columns",
+          "displayNameKey": "Prop_layout_gap",
+          "type": {
+            "numeric": true
+          }
+        },
+        "sortColumns": {
+          "displayName": "Order columns by",
+          "displayNameKey": "Prop_layout_sortColumns",
+          "type": {
+            "enumeration": [
+              {
+                "value": "data",
+                "displayName": "Data order",
+                "displayNameKey": "Enum_sc_data"
+              },
+              {
+                "value": "size",
+                "displayName": "Size",
+                "displayNameKey": "Enum_sc_size"
+              },
+              {
+                "value": "focus",
+                "displayName": "Share of the focus series (Pro)",
+                "displayNameKey": "Enum_sc_focus"
+              }
+            ]
+          }
+        },
+        "sortSeries": {
+          "displayName": "Order series by",
+          "displayNameKey": "Prop_layout_sortSeries",
+          "type": {
+            "enumeration": [
+              {
+                "value": "size",
+                "displayName": "Size",
+                "displayNameKey": "Enum_ss_size"
+              },
+              {
+                "value": "data",
+                "displayName": "Data order",
+                "displayNameKey": "Enum_ss_data"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "series": {
+      "displayName": "Series",
+      "displayNameKey": "Obj_series",
+      "properties": {
+        "named": {
+          "displayName": "Named series (Free 3, Pro 12)",
+          "displayNameKey": "Prop_series_named",
+          "type": {
+            "numeric": true
+          }
+        },
+        "othersLabel": {
+          "displayName": "Others label",
+          "displayNameKey": "Prop_series_othersLabel",
+          "type": {
+            "text": true
+          }
+        },
+        "othersColor": {
+          "displayName": "Others color",
+          "displayNameKey": "Prop_series_othersColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "fill": {
+          "displayName": "Color",
+          "displayNameKey": "Prop_series_fill",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "opacity": {
+          "displayName": "Opacity %",
+          "displayNameKey": "Prop_series_opacity",
+          "type": {
+            "numeric": true
+          }
+        },
+        "borderColor": {
+          "displayName": "Cell border color",
+          "displayNameKey": "Prop_series_borderColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "borderWidth": {
+          "displayName": "Cell border width",
+          "displayNameKey": "Prop_series_borderWidth",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "labels": {
+      "displayName": "Cell labels",
+      "displayNameKey": "Obj_labels",
+      "properties": {
+        "show": {
+          "displayName": "Show",
+          "displayNameKey": "Prop_labels_show",
+          "type": {
+            "bool": true
+          }
+        },
+        "content": {
+          "displayName": "Show",
+          "displayNameKey": "Prop_labels_content",
+          "type": {
+            "enumeration": [
+              {
+                "value": "share",
+                "displayName": "Share",
+                "displayNameKey": "Enum_lc_share"
+              },
+              {
+                "value": "value",
+                "displayName": "Value",
+                "displayNameKey": "Enum_lc_value"
+              },
+              {
+                "value": "both",
+                "displayName": "Value and share",
+                "displayNameKey": "Enum_lc_both"
+              },
+              {
+                "value": "name",
+                "displayName": "Series name and share",
+                "displayNameKey": "Enum_lc_name"
+              }
+            ]
+          }
+        },
+        "fontSize": {
+          "displayName": "Text size",
+          "displayNameKey": "Prop_labels_fontSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color": {
+          "displayName": "Text color (empty = automatic)",
+          "displayNameKey": "Prop_labels_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "decimals": {
+          "displayName": "Decimals of the share",
+          "displayNameKey": "Prop_labels_decimals",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "columnLabels": {
+      "displayName": "Column labels",
+      "displayNameKey": "Obj_columnLabels",
+      "properties": {
+        "show": {
+          "displayName": "Show",
+          "displayNameKey": "Prop_columnLabels_show",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Text size",
+          "displayNameKey": "Prop_columnLabels_fontSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color": {
+          "displayName": "Text color",
+          "displayNameKey": "Prop_columnLabels_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "bold": {
+          "displayName": "Bold",
+          "displayNameKey": "Prop_columnLabels_bold",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "totals": {
+      "displayName": "Column totals",
+      "displayNameKey": "Obj_totals",
+      "properties": {
+        "show": {
+          "displayName": "Show the size of each column",
+          "displayNameKey": "Prop_totals_show",
+          "type": {
+            "bool": true
+          }
+        },
+        "percent": {
+          "displayName": "Also its % of the total",
+          "displayNameKey": "Prop_totals_percent",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Text size",
+          "displayNameKey": "Prop_totals_fontSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color": {
+          "displayName": "Text color",
+          "displayNameKey": "Prop_totals_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "axis": {
+      "displayName": "Share axis",
+      "displayNameKey": "Obj_axis",
+      "properties": {
+        "show": {
+          "displayName": "Show",
+          "displayNameKey": "Prop_axis_show",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Text size",
+          "displayNameKey": "Prop_axis_fontSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color": {
+          "displayName": "Text color",
+          "displayNameKey": "Prop_axis_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "gridlines": {
+          "displayName": "Gridlines",
+          "displayNameKey": "Prop_axis_gridlines",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "focus": {
+      "displayName": "Focus series",
+      "displayNameKey": "Obj_focus",
+      "properties": {
+        "name": {
+          "displayName": "Focus series (Pro): name of a series",
+          "displayNameKey": "Prop_focus_name",
+          "type": {
+            "text": true
+          }
+        },
+        "color": {
+          "displayName": "Focus color",
+          "displayNameKey": "Prop_focus_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "dimOthers": {
+          "displayName": "Dim the other series",
+          "displayNameKey": "Prop_focus_dimOthers",
+          "type": {
+            "bool": true
+          }
+        },
+        "summary": {
+          "displayName": "Summary sentence",
+          "displayNameKey": "Prop_focus_summary",
+          "type": {
+            "bool": true
+          }
+        },
+        "fontSize": {
+          "displayName": "Sentence text size",
+          "displayNameKey": "Prop_focus_fontSize",
+          "type": {
+            "numeric": true
+          }
+        }
+      }
+    },
+    "comparison": {
+      "displayName": "Comparison",
+      "displayNameKey": "Obj_comparison",
+      "properties": {
+        "showChange": {
+          "displayName": "Show the change in share (Pro)",
+          "displayNameKey": "Prop_comparison_showChange",
+          "type": {
+            "bool": true
+          }
+        },
+        "positiveColor": {
+          "displayName": "Gain color",
+          "displayNameKey": "Prop_comparison_positiveColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "negativeColor": {
+          "displayName": "Loss color",
+          "displayNameKey": "Prop_comparison_negativeColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "sentence": {
+          "displayName": "Change in the summary sentence",
+          "displayNameKey": "Prop_comparison_sentence",
+          "type": {
+            "bool": true
+          }
+        }
+      }
+    },
+    "legend": {
+      "displayName": "Legend",
+      "displayNameKey": "Obj_legend",
+      "properties": {
+        "show": {
+          "displayName": "Show",
+          "displayNameKey": "Prop_legend_show",
+          "type": {
+            "bool": true
+          }
+        },
+        "position": {
+          "displayName": "Position",
+          "displayNameKey": "Prop_legend_position",
+          "type": {
+            "enumeration": [
+              {
+                "value": "top",
+                "displayName": "Top",
+                "displayNameKey": "Enum_lg_top"
+              },
+              {
+                "value": "bottom",
+                "displayName": "Bottom",
+                "displayNameKey": "Enum_lg_bottom"
+              },
+              {
+                "value": "right",
+                "displayName": "Right",
+                "displayNameKey": "Enum_lg_right"
+              }
+            ]
+          }
+        },
+        "fontSize": {
+          "displayName": "Text size",
+          "displayNameKey": "Prop_legend_fontSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "color": {
+          "displayName": "Text color",
+          "displayNameKey": "Prop_legend_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "smallMultiples": {
+      "displayName": "Small multiples",
+      "displayNameKey": "Obj_smallMultiples",
+      "properties": {
+        "columns": {
+          "displayName": "Columns (0 = automatic)",
+          "displayNameKey": "Prop_smallMultiples_columns",
+          "type": {
+            "numeric": true
+          }
+        },
+        "gap": {
+          "displayName": "Space between panels",
+          "displayNameKey": "Prop_smallMultiples_gap",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleSize": {
+          "displayName": "Title size",
+          "displayNameKey": "Prop_smallMultiples_titleSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleColor": {
+          "displayName": "Title color",
+          "displayNameKey": "Prop_smallMultiples_titleColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "titleBold": {
+          "displayName": "Bold title",
+          "displayNameKey": "Prop_smallMultiples_titleBold",
+          "type": {
+            "bool": true
+          }
+        },
+        "background": {
+          "displayName": "Panel background",
+          "displayNameKey": "Prop_smallMultiples_background",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "border": {
+          "displayName": "Panel border",
+          "displayNameKey": "Prop_smallMultiples_border",
+          "type": {
+            "bool": true
+          }
+        },
+        "borderColor": {
+          "displayName": "Panel border color",
+          "displayNameKey": "Prop_smallMultiples_borderColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    },
+    "background": {
+      "displayName": "Background",
+      "displayNameKey": "Obj_background",
+      "properties": {
+        "color": {
+          "displayName": "Color",
+          "displayNameKey": "Prop_background_color",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tooltips": {
+    "supportedTypes": {
+      "default": true,
+      "canvas": true
+    },
+    "roles": [
+      "tooltips"
+    ]
+  },
+  "drilldown": {
+    "roles": [
+      "category"
+    ]
+  },
+  "sorting": {
+    "default": {}
+  },
+  "supportsHighlight": true,
+  "supportsLandingPage": true,
+  "supportsEmptyDataView": true,
+  "supportsKeyboardFocus": true,
+  "supportsMultiVisualSelection": true,
+  "privileges": [],
+  "supportsOnObjectFormatting": true,
+  "enablePointerEventsFormatMode": true
+}
