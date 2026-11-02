@@ -102,6 +102,7 @@ Support: support@tcviz.com
 | Field | Value |
 |---|---|
 | Offer ID | `marimekko-tcviz` (the code expects `tino_callarisa.marimekko-tcviz.<plan>`) |
+| Offer alias | Marimekko & Mekko Chart by TCViz (internal to Partner Center, buyers do not see it) |
 | Categories | Comparison; Part-to-whole (or the closest available) |
 | Industries | Retail; Professional services |
 | Video | https://www.youtube.com/watch?v=s9qSTA-dvJw |
