@@ -1,8 +1,8 @@
 # Website product page — Marimekko & Mekko Chart by TCViz 1.0.0.0
 
-Entry for `C:\tcviz\web\src\data.jsx` (array `PRODUCTS`, after `radar-chart`). **Paste it when Microsoft publishes the
-offer**, not before: the AppSource link 404s until then and any web publish in between would carry it (skill
-`tcviz-publicada`). Then: icon `logos/icons/marimekko-chart.png`, screenshot and infographic with
+Entry for `C:\tcviz\web\src\data.jsx` (array `PRODUCTS`, after `radar-chart`). **Publish it before submitting**, as with
+the Radar (web 19-10, submission 20-10): the start screen of the visual links to tcviz.com/product/marimekko-chart/
+and the reviewer clicks it. The AppSource button works once Microsoft publishes the offer. Then: icon `logos/icons/marimekko-chart.png`, screenshot and infographic with
 `node scripts/screenshots.js`, the guide is generated from this entry by `scripts/guides.js`, `node scripts/build.js`.
 
 The infographic of the web is generated from this entry (`datos/demo_rtm/infografias.py`): correct the entry, not the image.
