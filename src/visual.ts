@@ -51,7 +51,7 @@ function isOurPaidPlan(spIdentifier: unknown): boolean {
 /** Enlaces de la pantalla de inicio. ?ref= cuenta en la web las visitas que llegan desde el visual. */
 const URL_GUIDE = "https://tinocallarisa-web.github.io/marimekko-chart/support.html";
 const URL_PRODUCT = "https://tcviz.com/product/marimekko-chart/?ref=visual-marimekko";
-const URL_VIDEO = "";
+const URL_VIDEO = "https://www.youtube.com/watch?v=s9qSTA-dvJw";
 
 // ─── Ajustes ──────────────────────────────────────────────────────────────────
 
