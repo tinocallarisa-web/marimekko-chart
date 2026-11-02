@@ -541,7 +541,8 @@ export class Visual implements IVisual {
     /** Valores grandes en forma corta (40,2 M) para totales y frases; el formato del modelo en el tooltip. */
     private shortFmt(v: number): string {
         try {
-            const f = valueFormatter.create({ format: this.valueFormat, value: v > 0 ? v : 1, precision: 1, cultureSelector: this.culture } as any);
+            // WholeUnits (2): el sistema por defecto pasa a "bn" desde 100 M y escribe 105,8 M como 0,1 bn.
+            const f = valueFormatter.create({ format: this.valueFormat, value: v > 0 ? v : 1, precision: 1, cultureSelector: this.culture, displayUnitSystemType: 2 } as any);
             return f.format(v);
         } catch { return String(Math.round(v)); }
     }
@@ -883,7 +884,10 @@ export class Visual implements IVisual {
 
     private legendItem(lg: SVGGElement, se: Series, x: number, y: number, fl: number, s: Settings, hc: { on: boolean; fg: string }): void {
         const it = this.el("g", { "data-series": se.key, cursor: se.others ? "default" : "pointer" }, lg);
-        this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill: hc.on ? hc.fg : se.color }, it);
+        // Con serie propia, la muestra va atenuada como sus celdas: si no, una serie del mismo color que el foco se confunde con él.
+        const focus = this.focusSeries(s);
+        const dim = !!focus && s.dimOthers && se.key !== focus.key;
+        this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill: hc.on ? hc.fg : se.color, "fill-opacity": hc.on || !dim ? 1 : 0.45 }, it);
         const t = this.el("text", { x: x + fl + 5, y: y + fl * 0.35, "font-size": fl, fill: hc.on ? hc.fg : s.legendColor }, it);
         t.textContent = this.fit(se.name, fl, 170);
         it.addEventListener("click", (e) => {
