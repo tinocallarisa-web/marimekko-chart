@@ -12,10 +12,10 @@ signed in) Pro stays off, no watermark.
 
 WHAT TO CHECK
 1. Empty visual: start screen; resize it (three layouts).
-2. Sample report: Columns = Channel, Series = Manufacturer, Value = Market sales. Column
-width = channel size; 3 named series plus Others in the free version.
-3. Pro, editing without licence: Format > Focus series = Begudes Nord; Comparison value =
-Market sales PY; Small multiples = Year; Layout > Horizontal. Watermark appears.
+2. Sample report: Columns = Subchannel, Series = Manufacturer, Value = Market sales (M€).
+It opens with Focus series = Iberia Drinks (Pro): in edit mode the watermark shows;
+clear it for the free result, 3 named series plus Others.
+3. More Pro: Small multiples = Year; Layout > Horizontal; Focus series = Begudes Nord.
 4. Click a cell: other visuals filter by that column and series (every identity of the cell;
 Others carries all its series). Click a column label or a legend item to select the whole
 column or series. Click again to clear; Ctrl+click adds. Bookmarks restore it.
