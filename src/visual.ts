@@ -677,15 +677,30 @@ export class Visual implements IVisual {
                 for (const se of this.series) { this.legendItem(lg, se, W - colW, y, fl, s, hc); y += rowH; }
                 right += colW + 6;
             } else {
-                const y = s.legendPos === "bottom" ? H - rowH / 2 - 2 : top + rowH / 2;
-                let x = 6;
+                // Varias filas antes que perder series en silencio; si ni así caben, "+N" al final.
+                const MAX_ROWS = 3;
+                const filas: { se: Series; x: number }[][] = [[]];
+                let x = 6, resto = 0;
                 for (const se of this.series) {
                     const w = fl + 10 + Math.min(170, this.textW(se.name, fl));
-                    if (x + w > W - 6) break;
-                    this.legendItem(lg, se, x, y, fl, s, hc);
+                    if (x + w > W - 6 && filas[filas.length - 1].length) {
+                        if (filas.length === MAX_ROWS) { resto = this.series.length - filas.reduce((t, f) => t + f.length, 0); break; }
+                        filas.push([]); x = 6;
+                    }
+                    filas[filas.length - 1].push({ se, x });
                     x += w + 12;
                 }
-                if (s.legendPos === "bottom") bottom += rowH + 4; else top += rowH + 2;
+                const alto = filas.length * rowH;
+                const y0 = s.legendPos === "bottom" ? H - alto - 2 + rowH / 2 : top + rowH / 2;
+                filas.forEach((f, k) => f.forEach(it => this.legendItem(lg, it.se, it.x, y0 + k * rowH, fl, s, hc)));
+                if (resto) {
+                    const ult = filas[filas.length - 1];
+                    const t = this.el("text", { x: Math.min(W - 30, x), y: y0 + (filas.length - 1) * rowH + fl * 0.35, "font-size": fl,
+                        fill: hc.on ? hc.fg : s.legendColor }, lg);
+                    t.textContent = "+" + resto;
+                    if (!ult.length) t.setAttribute("x", "6");
+                }
+                if (s.legendPos === "bottom") bottom += alto + 4; else top += alto + 2;
             }
         }
 
