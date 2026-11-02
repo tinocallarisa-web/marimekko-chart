@@ -1112,7 +1112,7 @@ export class Visual implements IVisual {
         g.addEventListener("contextmenu", (e) => {
             e.preventDefault(); e.stopPropagation();
             if (!this.canInteract) return;
-            this.selectionManager.showContextMenu(cell.ids[0] ?? ({} as ISelectionId), { x: e.clientX, y: e.clientY });
+            this.selectionManager.showContextMenu(this.menuId(cell), { x: e.clientX, y: e.clientY });
         });
         g.addEventListener("mousemove", (e) => this.showTooltip(cell, e.clientX, e.clientY));
         g.addEventListener("mouseleave", () => this.host.tooltipService.hide({ immediately: false, isTouchEvent: false }));
@@ -1138,7 +1138,7 @@ export class Visual implements IVisual {
                 case "Escape": if (this.canInteract) this.selectionManager.clear().then(() => this.paintSelection()); break;
                 case "ContextMenu": {
                     const r = g.getBoundingClientRect();
-                    if (this.canInteract) this.selectionManager.showContextMenu(cell.ids[0] ?? ({} as ISelectionId), { x: r.left + r.width / 2, y: r.top });
+                    if (this.canInteract) this.selectionManager.showContextMenu(this.menuId(cell), { x: r.left + r.width / 2, y: r.top });
                     break;
                 }
                 default: handled = false;
@@ -1173,6 +1173,11 @@ export class Visual implements IVisual {
      * Selección por celdas, con TODAS sus identidades ("Others" junta muchas filas). Seleccionar una lista
      * no alterna, así que volver a pulsar lo único seleccionado se resuelve aquí con clear().
      */
+    /** Menú contextual: una celda con varias filas (Others) no se reduce a la primera; se abre sin dato. */
+    private menuId(cell: { ids: ISelectionId[] }): ISelectionId {
+        return cell.ids.length === 1 ? cell.ids[0] : ({} as ISelectionId);
+    }
+
     private selectKeys(keys: string[], multi: boolean): void {
         if (!this.canInteract || !keys.length) return;
         const actual = this.selectedCells();

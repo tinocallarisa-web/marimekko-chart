@@ -1,10 +1,10 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and how-to
-    url: https://github.com/tinocallarisa-web/radar-chart/discussions
+    url: https://github.com/tinocallarisa-web/marimekko-chart/discussions
     about: Ask and share examples in Discussions
   - name: Documentation
-    url: https://tinocallarisa-web.github.io/radar-chart/support.html
+    url: https://tinocallarisa-web.github.io/marimekko-chart/support.html
     about: Guide, FAQ and troubleshooting
   - name: Email
     url: mailto:support@tcviz.com
