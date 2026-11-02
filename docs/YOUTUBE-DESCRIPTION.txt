@@ -51,15 +51,15 @@ WHAT IT DOES
 FREE AND PRO
 ──────────────────────────────────────────
 FREE — a complete Marimekko chart:
-• Three named series, the rest in Others
-• Both orientations, 100% or absolute values
-• Cell labels, column totals, share axis, legend, templates
+• Columns at 100%, three named series, the rest in Others
+• Share labels, column totals with their % of the total, share axis, legend, templates
 
 PRO — read your own position:
 • 4 to 12 named series
 • Your company highlighted, with a summary sentence: share, strongest and weakest segment
 • Change in share against a comparison period, in points per cell
 • Small multiples on a shared scale
+• Horizontal bars, absolute values (bar Mekko), value and % of the total labels
 
 Turn on a Pro feature while editing without a licence and it is drawn working on your own data, under a "Pro preview" watermark.
 

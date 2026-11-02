@@ -188,7 +188,7 @@
               },
               {
                 "value": "horizontal",
-                "displayName": "Bars (horizontal)",
+                "displayName": "Bars (horizontal) (Pro)",
                 "displayNameKey": "Enum_or_horizontal"
               }
             ]
@@ -206,7 +206,7 @@
               },
               {
                 "value": "absolute",
-                "displayName": "Absolute (bar Mekko)",
+                "displayName": "Absolute (bar Mekko) (Pro)",
                 "displayNameKey": "Enum_md_absolute"
               }
             ]
@@ -352,17 +352,17 @@
               },
               {
                 "value": "total",
-                "displayName": "% of the total",
+                "displayName": "% of the total (Pro)",
                 "displayNameKey": "Enum_lc_total"
               },
               {
                 "value": "value",
-                "displayName": "Value",
+                "displayName": "Value (Pro)",
                 "displayNameKey": "Enum_lc_value"
               },
               {
                 "value": "both",
-                "displayName": "Value and share",
+                "displayName": "Value and share (Pro)",
                 "displayNameKey": "Enum_lc_both"
               },
               {

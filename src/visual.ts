@@ -383,6 +383,11 @@ export class Visual implements IVisual {
         add(!!s.focus.trim() || s.sortColumns === "focus", "focus", "Feat_focus", "focus series and summary");
         add(this.roleBound("comparison"), "comparison", "Feat_comparison", "change in share");
         add(this.roleBound("panel"), "panel", "Feat_panel", "small multiples");
+        // Gratuito apretado (Tino, 02-11-2026): sin ventas, el Free resolvía todo lo habitual. Free = columnas al 100 %
+        // con cuota; las otras lecturas son Pro y se ven en vista previa al elegirlas.
+        add(s.orientation === "horizontal", "horizontal", "Feat_horizontal", "horizontal bars");
+        add(s.mode === "absolute", "absolute", "Feat_absolute", "absolute values");
+        add(s.labelContent === "total" || s.labelContent === "value" || s.labelContent === "both", "labels", "Feat_labels", "value and % of the total labels");
         return out;
     }
 
@@ -393,6 +398,8 @@ export class Visual implements IVisual {
         s.named = clamp(Math.round(s.named), 1, FREE_SERIES);
         s.focus = "";
         if (s.sortColumns === "focus") s.sortColumns = "size";
+        s.orientation = "vertical"; s.mode = "percent";
+        if (s.labelContent === "total" || s.labelContent === "value" || s.labelContent === "both") s.labelContent = "share";
         return s;
     }
 
@@ -1340,7 +1347,7 @@ export class Visual implements IVisual {
             if (hc.on) { chip.style.background = "transparent"; chip.style.border = "1px solid " + fg; }
             pro.appendChild(chip);
             pro.appendChild(mk("span", undefined, L
-                ? T("Landing_Pro", "Up to 12 named series, your company highlighted with a summary sentence, the change in share against a prior period, and small multiples.")
+                ? T("Landing_Pro", "Up to 12 named series, your company highlighted with a summary sentence, the change in share against a prior period, small multiples, horizontal bars, absolute values and % of the total labels.")
                 : T("Landing_ProShort", "More series, your company highlighted, change in share, small multiples.")));
             box.appendChild(pro);
         }
@@ -1545,8 +1552,8 @@ export class Visual implements IVisual {
                 tog("style", "guide", "Setup guide", s.guide),
             ]),
             card("layout", "Layout", [
-                dd("layout", "orientation", "Orientation", s.orientation, [["vertical", "Enum_or_vertical", "Columns (vertical)"], ["horizontal", "Enum_or_horizontal", "Bars (horizontal)"]]),
-                dd("layout", "mode", "Values", s.mode, [["percent", "Enum_md_percent", "100% (share)"], ["absolute", "Enum_md_absolute", "Absolute (bar Mekko)"]]),
+                dd("layout", "orientation", "Orientation", s.orientation, [["vertical", "Enum_or_vertical", "Columns (vertical)"], ["horizontal", "Enum_or_horizontal", "Bars (horizontal) (Pro)"]]),
+                dd("layout", "mode", "Values", s.mode, [["percent", "Enum_md_percent", "100% (share)"], ["absolute", "Enum_md_absolute", "Absolute (bar Mekko) (Pro)"]]),
                 num("layout", "gap", "Space between columns", s.gap),
                 dd("layout", "sortColumns", "Order columns by", s.sortColumns, [["data", "Enum_sc_data", "Data order"], ["size", "Enum_sc_size", "Size"],
                     ["focus", "Enum_sc_focus", "Share of the focus series (Pro)"]]),
@@ -1563,8 +1570,8 @@ export class Visual implements IVisual {
             ]),
             card("labels", "Cell labels", [
                 tog("labels", "show", "Show", s.labels),
-                dd("labels", "content", "Show", s.labelContent, [["share", "Enum_lc_share", "Share of the column"], ["total", "Enum_lc_total", "% of the total"], ["value", "Enum_lc_value", "Value"],
-                    ["both", "Enum_lc_both", "Value and share"], ["name", "Enum_lc_name", "Series name and share"]]),
+                dd("labels", "content", "Show", s.labelContent, [["share", "Enum_lc_share", "Share of the column"], ["total", "Enum_lc_total", "% of the total (Pro)"], ["value", "Enum_lc_value", "Value (Pro)"],
+                    ["both", "Enum_lc_both", "Value and share (Pro)"], ["name", "Enum_lc_name", "Series name and share"]]),
                 num("labels", "fontSize", "Text size", s.labelFont),
                 col("labels", "color", "Text color (empty = automatic)", s.labelColor),
                 num("labels", "decimals", "Decimals of the share", s.labelDecimals),

@@ -33,18 +33,18 @@ READING IT
   whole market.
 - Above each column: its size and its % of the total. The vertical axis is the share inside each column.
 - Others is never dropped: every column still adds up to its real 100%, so widths do not change.
-- The tooltip gives both readings: share of the column and % of the total.
+- The tooltip gives both readings, in Free too: share of the column and % of the total.
 
 FORMAT PANE
 -----------
 
 - Style template -- Clean, Classic, Minimal, Contrast, Compact and IBCS style; your own settings win. The setup
   guide can be turned back on here.
-- Layout -- columns (vertical) or bars (horizontal); 100% (share) or absolute values (bar Mekko); space between
-  columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order.
+- Layout -- columns (vertical) or bars (horizontal, Pro); 100% (share) or absolute values (bar Mekko, Pro); space
+  between columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order.
 - Series -- one colour per named series, number of named series, Others label and colour, opacity, cell borders.
-- Cell labels -- share of the column, % of the total, value, value and share, or series name and share; decimals.
-  A label is hidden when it does not fit its cell.
+- Cell labels -- share of the column or series name and share; % of the total, value, or value and share (Pro);
+  decimals. A label is hidden when it does not fit its cell.
 - Column labels, Column totals (size and % of the total), Share axis with gridlines, Legend (top, bottom, right),
   Small multiples (columns, spacing, titles, panel background and border), Background.
 
@@ -57,6 +57,7 @@ PRO
 - Change in share against the comparison period: points per cell, coloured gain or loss, and a second sentence
   with the column that explains most of the change.
 - Small multiples on a shared scale.
+- Horizontal bars, absolute values (bar Mekko), and labels with the value or the % of the total.
 
 FILTERING
 ---------
@@ -77,8 +78,8 @@ GOOD TO KNOW
 FREE AND PRO
 ------------
 
-Free is a complete, correct Marimekko chart: three named series plus Others, both orientations, 100% or absolute
-values, cell labels, column totals, share axis, legend, templates, filtering, highlight, bookmarks, drilldown,
+Free is a complete, correct Marimekko chart: columns at 100% with three named series plus Others, share labels,
+column totals with their % of the total, share axis, legend, templates, filtering, highlight, bookmarks, drilldown,
 keyboard navigation and high contrast. While editing without a licence, Pro features are drawn working on your own
 data under a Pro preview watermark; reading view shows the free result.
 

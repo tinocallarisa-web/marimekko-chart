@@ -29,8 +29,8 @@ OBJECTS = [
         ("guide", "Setup guide", "bool"),
     ]),
     ("layout", "Layout", [
-        ("orientation", "Orientation", E(("vertical", "Enum_or_vertical", "Columns (vertical)"), ("horizontal", "Enum_or_horizontal", "Bars (horizontal)"))),
-        ("mode", "Values", E(("percent", "Enum_md_percent", "100% (share)"), ("absolute", "Enum_md_absolute", "Absolute (bar Mekko)"))),
+        ("orientation", "Orientation", E(("vertical", "Enum_or_vertical", "Columns (vertical)"), ("horizontal", "Enum_or_horizontal", "Bars (horizontal) (Pro)"))),
+        ("mode", "Values", E(("percent", "Enum_md_percent", "100% (share)"), ("absolute", "Enum_md_absolute", "Absolute (bar Mekko) (Pro)"))),
         ("gap", "Space between columns", "num"),
         ("sortColumns", "Order columns by", E(("data", "Enum_sc_data", "Data order"), ("size", "Enum_sc_size", "Size"),
                                              ("focus", "Enum_sc_focus", "Share of the focus series (Pro)"))),
@@ -47,7 +47,7 @@ OBJECTS = [
     ]),
     ("labels", "Cell labels", [
         ("show", "Show", "bool"),
-        ("content", "Show", E(("share", "Enum_lc_share", "Share of the column"), ("total", "Enum_lc_total", "% of the total"), ("value", "Enum_lc_value", "Value"), ("both", "Enum_lc_both", "Value and share"),
+        ("content", "Show", E(("share", "Enum_lc_share", "Share of the column"), ("total", "Enum_lc_total", "% of the total (Pro)"), ("value", "Enum_lc_value", "Value (Pro)"), ("both", "Enum_lc_both", "Value and share (Pro)"),
                               ("name", "Enum_lc_name", "Series name and share"))),
         ("fontSize", "Text size", "num"),
         ("color", "Text color (empty = automatic)", "color"),
