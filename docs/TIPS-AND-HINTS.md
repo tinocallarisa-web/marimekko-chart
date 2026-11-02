@@ -73,7 +73,7 @@ Column widths are shares of what is in the chart, so they always add up to 100% 
 
 Free is a complete, correct Marimekko chart: columns at 100% with three named series plus Others, share labels,
 column totals with their % of the total, share axis, legend, templates, filtering, highlight, bookmarks, drilldown,
-keyboard navigation and high contrast. While editing without a licence, Pro features are drawn working on your own
+keyboard navigation, high contrast and 12 languages. While editing without a licence, Pro features are drawn working on your own
 data under a Pro preview watermark; reading view shows the free result.
 
 ## Privacy

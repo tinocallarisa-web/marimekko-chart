@@ -1,16 +1,11 @@
-# Changelog
+# Changelog — Marimekko & Mekko Chart by TCViz
 
-All notable changes to Radar & Spider Chart by TCViz. Power BI four-part version numbers.
-
-## 1.0.0.0 — 2026-10-19
-
-- First release: one spoke per axis, a common scale from zero with a fixable minimum and maximum, axes that keep their order when you filter, and empty values drawn as gaps.
-- Measures as axes: without an Axis field, each measure in Values is an axis, so survey data in columns works without unpivoting.
-- Up to 3 series free; Pro draws up to 12.
-- Pro: target with the gap per axis, scale per axis (from the data or from Scale minimum/maximum) with each axis labelling its own rings, reversed "lower is better" axes, % of target scale, bands, a reference ring, small multiples or one radar per series, axis groups as named arcs, annotations from a text measure, marker colour with conditional formatting (fx) rules, a value table and the mean of the axes.
-- Curved lines that never go beyond the neighbouring values, marker shapes (or one per series), grid as polygon or circle, rotation, data labels, long axis labels on two lines.
-- Notes on the data: an axis that flattens the others, and values outside a fixed scale.
-- Six style templates, including IBCS style, and a setup guide.
-- Cross-filtering by point, axis or series, highlight, bookmarks, drilldown, context menu, report tooltips, keyboard navigation, screen-reader descriptions and high contrast.
-- The number format of each measure, dynamic format strings included; format on the canvas; start screen; Format pane and texts in 12 languages.
-- No network requests; Pro licence through Microsoft AppSource.
+## 1.0.0.0 — November 2026
+- First release: Marimekko columns at 100% where the width is the size of each segment and the height its share.
+- Free: 3 named series plus Others (which keeps every column at its real 100%), share labels, column totals with their % of the total, share axis, legend, ordering by size or data order.
+- Pro: 4 to 12 named series; focus series with the others dimmed and a summary sentence; change in share against a comparison period; small multiples; horizontal bars; absolute values (bar Mekko); value and % of the total labels.
+- Pro preview: while editing without a licence, Pro features are drawn working under a watermark that names them; reading view shows the free result.
+- 6 style templates (including IBCS style), setup guide inside the visual, start screen in three sizes.
+- Cross-filtering with every identity of a cell, highlight, bookmarks, drilldown, context menu, keyboard navigation, screen-reader labels, high contrast, format on the canvas.
+- Number format of the measure, dynamic format strings included; 12 languages.
+- No network requests and no privileges.

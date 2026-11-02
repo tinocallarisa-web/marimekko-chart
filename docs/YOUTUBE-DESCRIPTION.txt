@@ -44,7 +44,7 @@ WHAT IT DOES
 ✅ Others is never dropped: every column keeps its real 100%
 ✅ Six style templates, including an IBCS style, and a setup guide inside the visual
 ✅ Click to filter, highlight, bookmarks, drilldown, keyboard navigation and high contrast
-✅ The measure's number format, dynamic format strings included
+✅ The measure's number format, dynamic format strings included; twelve languages
 ✅ No network requests: everything is computed inside your report
 
 ──────────────────────────────────────────
