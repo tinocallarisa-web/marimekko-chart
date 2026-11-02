@@ -1,13 +1,13 @@
-# Radar & Spider Chart by TCViz
+# Marimekko & Mekko Chart by TCViz
 
-A Power BI custom visual: a radar (spider) chart that reads honestly — a common scale from zero that does not move when you filter,
-axes that stay in place, and gaps where values are missing. The free version compares up to 3 series; Pro adds more series, a
-target with the gap on every axis, a scale per axis and reversed axes, bands, small multiples, axis groups, annotations,
-conditional formatting (fx) rules and a value table.
+A Power BI custom visual: a Marimekko (Mekko) chart for market structure — the width of each column is the size of the segment,
+the stack is who shares it. The free version names 3 series plus Others, which keeps every column at its real 100%; Pro adds up
+to 12 series, your company highlighted with a summary sentence, the change in share against a comparison period, small
+multiples, horizontal bars, absolute values (bar Mekko) and value or % of the total labels.
 
-- Documentation: https://tinocallarisa-web.github.io/radar-chart/support.html
-- Privacy: https://tinocallarisa-web.github.io/radar-chart/privacy.html · Terms: https://tinocallarisa-web.github.io/radar-chart/terms.html
-- Questions: https://github.com/tinocallarisa-web/radar-chart/discussions · support@tcviz.com
+- Documentation: https://tinocallarisa-web.github.io/marimekko-chart/support.html
+- Privacy: https://tinocallarisa-web.github.io/marimekko-chart/privacy.html · Terms: https://tinocallarisa-web.github.io/marimekko-chart/terms.html
+- Questions: https://github.com/tinocallarisa-web/marimekko-chart/discussions · support@tcviz.com
 
 ## Build
 
