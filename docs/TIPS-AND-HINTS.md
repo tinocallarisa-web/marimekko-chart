@@ -1,87 +1,82 @@
-# Radar & Spider Chart by TCViz — Tips & Hints (1.0.0.0)
+# Marimekko & Mekko Chart by TCViz — Tips & Hints (1.0.0.0)
 
-A radar (spider) chart that reads honestly: a common scale from zero that does not move when you filter, axes
-that stay in place, and gaps where values are missing. This page is the short version of everything worth knowing.
-Full documentation, with search: <https://tinocallarisa-web.github.io/radar-chart/support.html>
+A Marimekko (Mekko) chart for market structure: the width of each column is the size of the segment, the stack is
+who shares it. One chart answers "where are we strong in a big market?". This page is the short version of
+everything worth knowing.
+Full documentation, with search: <https://tinocallarisa-web.github.io/marimekko-chart/support.html>
 
 ## Quick start
 
-1. Axis: the criteria — quality, price, delivery.
-2. Values: the score, set to Average.
-3. Series (legend): what you compare — supplier, employee, product.
+1. Columns (segments): the segments of the market — channel, region, category.
+2. Series (stack): who shares each segment — company, brand, competitor.
+3. Value: sales, volume or units.
 
-The most common surprise: the scale goes up to 20 on a 1-to-5 survey. Values is set to Sum, so several
-evaluations per supplier and criterion are added up. Set it to Average.
+The most common surprise: a segment looks narrow because the measure is filtered by another visual or a slicer.
+Column widths are shares of what is in the chart, so they always add up to 100% of the filtered total.
 
 ## Field wells
 
 | Well | Limit | What it does |
 |---|---|---|
-| Axis | 3 to 40 axes | One spoke per value; a hierarchy gives drilldown. Without Axis, each measure is an axis. |
-| Values | up to 40 measures | The score. With Axis and no Series, each measure is a series. |
-| Series (legend) | 1 field; Free 3, Pro 12 | One shape per value; the legend says "3 of N series". |
-| Target (Pro) | 1 | Required level per axis: dashed shape and the gap per axis. |
-| Scale minimum / maximum (Pro) | 1 each | Range of each axis for the scale per axis. |
-| Axis group (Pro) | 1 | Named arcs around the radar; axes of a group stay together. |
-| Note (Pro) | 1 | A text measure shown next to the point. |
-| Small multiples (Pro) | 1 | One radar per value, same scale; each panel draws its own axes. |
-| Tooltips | several | Extra measures in the tooltip. |
+| Columns (segments) | 1 field; up to 60 columns | One column per value; its width is its share of the total. A hierarchy gives drilldown. |
+| Series (stack) | 1 field; Free 3 named, Pro 12 | Who shares each column. The series beyond the named ones are added up in Others. |
+| Value | 1 measure | Sales, volume or units. Negative values are drawn as zero. |
+| Comparison value (Pro) | 1 measure | The same measure for another period: the change in share, in points, per cell. |
+| Small multiples (Pro) | 1 field | One chart per value — year, country, product line — on the same scale. |
+| Tooltips | up to 10 | Extra measures in the tooltip. |
 
 ## Reading it
 
-- Further from the centre is higher — or better, on axes marked with a down arrow.
-- A gap in the outline is an empty value, never a zero. A real zero is drawn.
-- The area of a shape depends on the order of the axes: it is not a total, and the visual never shows one.
-- A note names an axis that flattens the others (ppm next to %), and counts values outside a fixed scale.
+- Width = size of the segment. Height of a cell = its share of that segment. Area of a cell = its share of the
+  whole market.
+- Above each column: its size and its % of the total. The vertical axis is the share inside each column.
+- Others is never dropped: every column still adds up to its real 100%, so widths do not change.
+- The tooltip gives both readings: share of the column and % of the total.
 
 ## Format pane
 
 - Style template — Clean, Classic, Minimal, Contrast, Compact and IBCS style; your own settings win. The setup
   guide can be turned back on here.
-- Series — one colour per series, fill opacity, line width, curved lines (they never go beyond the values of the
-  two axes they join).
-- Markers — size, shape (circle, square, diamond, triangle, or one per series), colour with conditional
-  formatting (fx) rules (Pro) when there is no Series field.
-- Scale — common, per axis (Pro) or % of target (Pro); start at zero; fixed minimum and maximum; rings;
-  "Lower is better" axis names (Pro).
-- Grid — polygon or circle, spokes, ring values, rotation. Axis labels — long names wrap onto two lines.
-- Axis order — data order (respects Sort by column), name, or value of the first series.
-- Target, Bands, Reference ring, Axis groups, Annotations, Center (mean of the axes), Legend, Value table,
-  Small multiples (one radar per series), Background.
+- Layout — columns (vertical) or bars (horizontal); 100% (share) or absolute values (bar Mekko); space between
+  columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order.
+- Series — one colour per named series, number of named series, Others label and colour, opacity, cell borders.
+- Cell labels — share of the column, % of the total, value, value and share, or series name and share; decimals.
+  A label is hidden when it does not fit its cell.
+- Column labels, Column totals (size and % of the total), Share axis with gridlines, Legend (top, bottom, right),
+  Small multiples (columns, spacing, titles, panel background and border), Background.
 
 ## Pro
 
-- 4 to 12 series.
-- Target with the gap per axis (shown for the selected series when there are several).
-- Scale per axis, from the data or from Scale minimum / maximum; each axis labels its own rings.
-- "Lower is better" axes, reversed and marked; % of target scale.
-- Bands and a reference ring.
-- Small multiples, or one radar per series without a panel field.
-- Axis groups, annotations, conditional formatting (fx) rules on markers, value table, mean of the axes.
+- 4 to 12 named series.
+- Focus series: your company highlighted (the others dimmed) and a summary sentence — "Begudes Nord holds 23% of a
+  40.2 M€ market; strongest in Supermarket (41%), weakest in Bars & cafés (9%)". Columns can be ordered by its share.
+- Change in share against the comparison period: points per cell, coloured gain or loss, and a second sentence
+  with the column that explains most of the change.
+- Small multiples on a shared scale.
 
 ## Filtering
 
-- Click a point to filter by its axis and series; an axis label selects the axis; a legend item selects the series.
-- Click again to clear; Ctrl+click to add. Highlight from other visuals draws over a faded outline.
+- Click a cell to filter by its column and series; a column label selects the whole column; a legend item selects
+  the series. Clicking Others selects every series inside it.
+- Click again to clear; Ctrl+click to add. Highlight from other visuals dims the cells that are not highlighted.
 - Bookmarks restore the selection. Right-click opens the Power BI context menu.
-- Keyboard: Tab to the chart, arrows between points, Enter to select, Esc to clear.
+- Keyboard: Tab to the chart, arrows between cells, Enter to select, Esc to clear.
 
 ## Good to know
 
-- Order by value follows the values, so it changes with filters. Data order and name do not.
-- Conditional formatting (fx) on markers works without a Series field; with Series, Power BI does not evaluate
-  the rule per point, as with native charts that have a Legend field.
-- More than 4 or 5 shapes on one radar is hard to read: use small multiples or one radar per series.
+- Write the focus series exactly as it appears in the data; a note says so if no series has that name.
+- Narrow columns hide their labels and shorten their names; the full name is in the tooltip.
+- In Power BI Desktop the visual uses the rows Power BI sends at once; a warning icon says so when the data is cut.
 
 ## Free and Pro
 
-Free is a complete, correct radar chart: up to 3 series on a fixed scale from zero, gaps for missing values,
-measures as axes, notes on the data, templates, curved lines, marker shapes, filtering, highlight, bookmarks,
-drilldown, high contrast and 12 languages. While editing without a licence, Pro features are drawn working on
-your own data under a Pro preview watermark; reading view shows the free result.
+Free is a complete, correct Marimekko chart: three named series plus Others, both orientations, 100% or absolute
+values, cell labels, column totals, share axis, legend, templates, filtering, highlight, bookmarks, drilldown,
+keyboard navigation and high contrast. While editing without a licence, Pro features are drawn working on your own
+data under a Pro preview watermark; reading view shows the free result.
 
 ## Privacy
 
 No network requests and no privileges: everything is computed inside your report.
 
-Questions: <https://github.com/tinocallarisa-web/radar-chart/discussions> · support@tcviz.com
+Questions: <https://github.com/tinocallarisa-web/marimekko-chart/discussions> · support@tcviz.com

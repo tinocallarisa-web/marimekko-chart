@@ -2,18 +2,18 @@
 YOUTUBE TAGS — PASTE THIS BLOCK (under 500 characters)
 ==========================================
 
-Power BI,Power BI custom visual,radar chart,spider chart,Power BI radar chart,spider chart Power BI,web chart,supplier evaluation,skills assessment,competency matrix,small multiples,target,KPI comparison,AppSource,data visualization,TCViz,Radar & Spider Chart by TCViz
+Power BI,Power BI custom visual,Marimekko chart,Mekko chart,Power BI Marimekko,Mekko chart Power BI,market share,market map,variable width chart,bar Mekko,market structure,share of market,AppSource,data visualization,TCViz,Marimekko & Mekko Chart by TCViz
 
 
 ==========================================
 EXTRA TAGS (swap in by audience)
 ==========================================
 
-Procurement:
-supplier scorecard, vendor evaluation, supplier performance
+Strategy and consulting:
+market sizing, competitive landscape, share of wallet, commercial strategy
 
-HR:
-skills matrix, employee competencies, team skills gap
+Sales and marketing:
+channel mix, category management, route to market
 
 Power BI general:
-Power BI tutorial, Power BI tips, Power BI dashboard, IBCS, survey analysis
+Power BI tutorial, Power BI tips, Power BI dashboard, IBCS, stacked column alternative
