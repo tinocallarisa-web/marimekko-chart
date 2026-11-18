@@ -11,6 +11,7 @@ import {
 import { STRINGS } from "./strings";
 import { LANDING_ICON } from "./landingIcon";
 import { createProWatermark, renderProWatermark } from "./comun/watermark";
+import { styleSeriesColor } from "./comun/paleta";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -547,7 +548,7 @@ export class Visual implements IVisual {
             const selector = serCol
                 ? (this.host.createSelectionIdBuilder().withCategory(serCol, row).createSelectionId() as any).getSelector?.()
                 : undefined;
-            let color = own || (look ? look.series[k % look.series.length] : this.host.colorPalette.getColor(nm).value);
+            let color = own || (look ? styleSeriesColor(look.series, k) : this.host.colorPalette.getColor(nm).value);
             if (focusName && nm.toLowerCase() === focusName) color = s.focusColor || color;
             return { key: "s" + k, name: nm, color, others: false, total: serTotal.get(nm), selector };
         });
