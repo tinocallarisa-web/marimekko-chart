@@ -9,6 +9,8 @@ solo se ven en Desktop. Aquí se simula lo que Power BI documenta (objects[i] po
 
 Uso:  node build-test.js          && python tools/simulador/harness.py pro
       node build-test.js --free   && python tools/simulador/harness.py free
+      node build-test.js          && python tools/simulador/harness.py ficha   (imágenes de la ficha, caso Begudes Nord:
+                                     capturas/ficha_*.png, las usa tools/infografias_mk.py)
 """
 import asyncio, io, json, os, sys
 from playwright.async_api import async_playwright
@@ -28,10 +30,10 @@ STUB = r"""
 window.__ev = []; window.__tips = []; window.__persist = []; window.__notices = [];
 window.powerbi = { visuals: { plugins: {} }, extensibility: {} };
 (function(){
- const PAL = ['#118DFF','#12239E','#E66C37','#6B007B','#E044A7','#744EC2','#D9B300','#D64550','#197278','#1AAB40'];
- let pi = 0; const pmap = {};
+ const PAL0 = ['#118DFF','#12239E','#E66C37','#6B007B','#E044A7','#744EC2','#D9B300','#D64550','#197278','#1AAB40'];
+ let pi = 0; const pmap = {}; let PAL = PAL0;
  function mkId(k){ return { __k:k, getKey(){return k;}, getSelector(){return {data:[{k}]};}, equals(o){return !!o && o.__k===k;}, includes(o){ return !!o && o.__k===k; } }; }
- window.__mkHost = function(opts){ return {
+ window.__mkHost = function(opts){ PAL = opts.pal || PAL0; return {
   eventService: { renderingStarted(){ __ev.push('S'); }, renderingFinished(){ __ev.push('F'); }, renderingFailed(o,m){ __ev.push('X'); console.error('FAILED', m); } },
   createSelectionManager(){ return { select(){ return Promise.resolve([]); }, clear(){ return Promise.resolve(); }, getSelectionIds(){ return []; },
      hasSelection(){ return false; }, registerOnSelectCallback(){}, showContextMenu(){ return Promise.resolve(); } }; },
@@ -43,7 +45,7 @@ window.powerbi = { visuals: { plugins: {} }, extensibility: {} };
   hostCapabilities: { allowInteractions: true }, locale: opts.locale || 'en-US',
   colorPalette: opts.hc ? { isHighContrast:true, foreground:{value:'#FFFFFF'}, background:{value:'#000000'}, foregroundSelected:{value:'#1AEBFF'},
       getColor(k){ return {value:'#FFFFFF'}; } }
-    : { isHighContrast:false, foreground:{value:'#252423'}, background:{value:'#FFFFFF'}, foregroundSelected:{value:'#1AEBFF'},
+    : { isHighContrast:false, foreground:{value: opts.fg || '#252423'}, background:{value:'#FFFFFF'}, foregroundSelected:{value:'#1AEBFF'},
       getColor(k){ if (!(k in pmap)) pmap[k] = PAL[(pi++) % PAL.length]; return {value: pmap[k]}; } },
   licenseManager: opts.license ? {
       getAvailableServicePlans(){ return Promise.resolve({ plans: [], isLicenseInfoAvailable: true, isLicenseUnsupportedEnv: false }); },
@@ -318,12 +320,90 @@ async def run_free(b):
     await pg.close()
 
 
+# ── Imágenes de la ficha (caso Begudes Nord) ─────────────────────────────────────────────────────────────────────────
+# Datos reales de la demo (datos/demo_rtm/csv_en/fact_market.csv): mercado de bebidas por subcanal y fabricante,
+# ene–sep 2026 frente a ene–sep 2025 (105,7 M€ frente a 97,5 M€, lo mismo que la página Market de DemoRTM_EN).
+# "Report theme" con los colores del tema TCViz (datos/demo_rtm/tema/TCViz.json), como en las capturas de la demo.
+TCVIZ_PAL = ['#2B6CB0', '#3E9C5B', '#D9A21B', '#C0392B', '#7A5FA8', '#5B9BD5', '#8BBF6A', '#E3B85A', '#6B6A63', '#A9C4E2', '#B5DABE', '#F0D9A0']
+MFMT = '#,0"€"'
+
+
+# Colores propios: Font Clara en gris (Format → Series), para que no se confunda con Iberia Drinks al atenuar las
+# demás series; Begudes Nord con su color del tema (ámbar) como color de foco.
+BN_COLORS = {"Font Clara": "#6B6A63"}
+
+
+def bn_dataview(objects=None, cmp=False, zones=None, panel=False, colors=BN_COLORS, rule=None):
+    """rule: función (subcanal, fabricante, cuota de la columna) -> color de la regla fx (series.cellColor por fila)."""
+    d = json.load(io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "begudes_nord.json"), encoding="utf-8"))
+    agg = {}
+    for zone, ch, sub, man, v26, v25 in d["rows"]:
+        if zones and zone not in zones: continue
+        k = (zone if panel else "", sub, man)
+        a = agg.setdefault(k, [0, 0]); a[0] += v26; a[1] += v25
+    keys = sorted(agg, key=lambda k: ((zones.index(k[0]) if panel else 0), k[1], k[2]))
+    cat = {"source": src("Subchannel", "Market.Subchannel", "category"), "values": [k[1] for k in keys]}
+    ser = {"source": src("Manufacturer", "Market.Manufacturer", "series"), "values": [k[2] for k in keys]}
+    if colors: ser["objects"] = [{"series": {"fill": {"solid": {"color": colors[k[2]]}}}} if k[2] in colors else {} for k in keys]
+    cats = [cat, ser]
+    if panel: cats.append({"source": src("Zone", "Market.Zone", "panel"), "values": [k[0] for k in keys]})
+    values = [{"source": src("Market sales", "Sum(Market.Market sales)", "value", MFMT, True), "values": [agg[k][0] for k in keys]}]
+    if rule:
+        tot = {}
+        for k in keys: tot[(k[0], k[1])] = tot.get((k[0], k[1]), 0) + agg[k][0]
+        values[0]["objects"] = [{"series": {"cellColor": {"solid": {"color": rule(k[1], k[2], agg[k][0] / tot[(k[0], k[1])])}}}} for k in keys]
+    if cmp: values.append({"source": src("Market sales PY", "Sum(Market.Market sales PY)", "comparison", MFMT, True), "values": [agg[k][1] for k in keys]})
+    return {"metadata": {"columns": [c["source"] for c in cats] + [v["source"] for v in values], "objects": objects or {}},
+            "categorical": {"categories": cats, "values": values}}
+
+
+async def run_ficha(b):
+    THEME = {"pal": TCVIZ_PAL, "fg": "#3D3929"}
+    FOCUS = {"focus": {"name": "Begudes Nord", "color": {"solid": {"color": "#D9A21B"}}}}
+
+    async def shot(name, W, H, objs, cmp=False, zones=None, panel=False, opts=THEME, bg="#FFFFFF", rule=None):
+        pg, errs = await page(b, W, H, opts, bg)
+        await update(pg, bn_dataview(objects=dict(objs, style=dict({"guide": False}, **objs.get("style", {}))), cmp=cmp, zones=zones, panel=panel, rule=rule), W, H)
+        await pg.screenshot(path=os.path.join(OUT, f"ficha_{name}.png"))
+        tt = await pg.evaluate("() => Array.from(document.querySelectorAll('svg text')).map(t => t.getBoundingClientRect().toJSON())")
+        out = [r for r in tt if r["width"] > 0 and (r["left"] < -0.5 or r["top"] < -0.5 or r["right"] > W + 0.5 or r["bottom"] > H + 0.5)]
+        wm = await pg.evaluate("() => { const e = document.querySelector('.tcviz-wm'); return e ? getComputedStyle(e).display : 'none'; }")
+        ev = await pg.evaluate("() => __ev.join('')")
+        check(f"ficha {name} ({W}x{H}): sin textos fuera, sin marca de agua, render 1:1", not out and wm == "none" and ev == "SF" and not errs,
+              f"fuera={len(out)} wm={wm} ev={ev} {errs[:1]}")
+        await pg.close()
+
+    # Free (3 series con nombre + Others, sin nada de Pro) y Pro (seis series, Begudes Nord y cambio de cuota), mismo dato
+    await shot("free", 620, 400, {"series": {"named": 3}})
+    await shot("pro", 620, 400, FOCUS, cmp=True)
+    # La mejor imagen: Pro completo con títulos de eje (1.0.1)
+    await shot("hero", 980, 580, FOCUS, cmp=True)
+    # La misma, al tamaño del hueco de la plantilla común de la infografía (texto legible a 1366x768)
+    await shot("central", 820, 320, FOCUS, cmp=True)
+    # Función Pro: small multiples por zona, a la misma escala
+    await shot("sm", 980, 580, dict(FOCUS, smallMultiples={"columns": 2}), zones=["BCN Ciutat", "Girona", "Baix Llobregat", "Vallès"], panel=True)
+    # Tres tamaños (D06): el mismo visual, misma configuración. Con la de la versión gratuita: con foco y frase, a
+    # 300x170 la frase y la leyenda de seis series dejan el gráfico en una franja (no se ocultan al encoger).
+    for nm, (w, h) in (("l", (900, 520)), ("m", (480, 300)), ("s", (300, 170))):
+        await shot("size_" + nm, w, h, {"series": {"named": 3}})
+    # Estilos de la colección (todos gratis): con lo que dibuja la versión gratuita
+    for st in ("boardroom", "ledger", "editorial", "signal", "aurora", "terrace"):
+        await shot("style_" + st, 900, 520, {"style": {"template": st}, "series": {"named": 3}})
+    # Novedades 1.0.1: tramas para distinguir series sin color, y color de celda con regla fx + tramas
+    await shot("patterns", 620, 400, {"accessibility": {"dataPatterns": True}})
+    # Color de celda con una regla fx (Begudes Nord: verde si tiene más del 25 % de la columna, rojo si menos del 12 %)
+    # y las tramas que siguen diciendo de quién es cada celda
+    bn_rule = lambda sub, man, sh: ("#3E9C5B" if sh > 0.25 else "#C0392B" if sh < 0.12 else "#2B6CB0") if man == "Begudes Nord" else "#D9D6CC"
+    await shot("fx", 620, 400, {"accessibility": {"dataPatterns": True}}, rule=bn_rule)
+
+
 async def main():
     os.makedirs(OUT, exist_ok=True)
     print("bundle:", GUID, "· modo", MODE)
     async with async_playwright() as p:
         b = await p.chromium.launch()
         if MODE == "free": await run_free(b)
+        elif MODE == "ficha": await run_ficha(b)
         else: await run_pro(b)
         await b.close()
     bad = [r for r in results if not r[1]]

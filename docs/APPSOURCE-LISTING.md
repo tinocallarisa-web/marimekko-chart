@@ -114,3 +114,19 @@ Support: support@tcviz.com
 | Terms (EULA) | https://tinocallarisa-web.github.io/marimekko-chart/terms.html |
 | Logo | `assets/logo_300x300.png` |
 | Screenshots | `assets/` (1366x768) |
+
+## Screenshots (Partner Center accepts 5, 1366x768) — upload in this order
+
+Regenerate with `node build-test.js && python tools/simulador/harness.py ficha && python tools/infografias_mk.py`.
+Images from the simulator, Begudes Nord data (Jan–Sep 2026 vs 2025); none shows the old templates.
+
+| # | File | What it shows |
+|---|---|---|
+| 1 | `assets/Screenshot_1.png` | The best image: Begudes Nord in focus, summary sentence, change in share on every cell, axis titles |
+| 2 | `assets/infographic.png` | Common TCViz infographic: fields, getting started, Free and Pro |
+| 3 | `assets/infographic-pro.png` | Free and Pro side by side, same data |
+| 4 | `assets/Screenshot_2.png` | One Pro feature: small multiples, one Mekko per zone |
+| 5 | `assets/Screenshot_3.png` | Readable at any size: large, medium and small at the same scale (OKviz D06) |
+
+Not uploaded (for the web or to swap in): `assets/Screenshot_4.png` (the six collection styles, all free) and
+`assets/Screenshot_5.png` (new in 1.0.1: axis titles, patterns, conditional formatting of the cell colour).
