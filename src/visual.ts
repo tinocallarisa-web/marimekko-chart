@@ -63,7 +63,7 @@ interface Settings {
     template: string; guide: boolean;
     orientation: string; mode: string; gap: number; sortColumns: string; sortSeries: string;
     named: number; othersLabel: string; othersColor: string; opacity: number; borderColor: string; borderWidth: number;
-    labels: boolean; labelContent: string; labelFont: number; labelColor: string; labelDecimals: number;
+    labels: boolean; labelContent: string; labelFont: number; labelColor: string; labelDecimals: number; labelBold: boolean;
     colLabels: boolean; colFont: number; colColor: string; colBold: boolean;
     totals: boolean; totalsPct: boolean; totalsFont: number; totalsColor: string;
     axis: boolean; axisFont: number; axisColor: string; gridlines: boolean;
@@ -86,7 +86,7 @@ const DEFAULTS: Settings = {
     template: "clean", guide: true,
     orientation: "vertical", mode: "percent", gap: 2, sortColumns: "size", sortSeries: "size",
     named: 12, othersLabel: "", othersColor: "#C8C6C4", opacity: 100, borderColor: "#FFFFFF", borderWidth: 1,
-    labels: true, labelContent: "share", labelFont: 10, labelColor: "", labelDecimals: 0,
+    labels: true, labelContent: "share", labelFont: 10, labelColor: "", labelDecimals: 0, labelBold: false,
     colLabels: true, colFont: 11, colColor: "#3D3929", colBold: false,
     totals: true, totalsPct: true, totalsFont: 10, totalsColor: "#605E5C",
     axis: true, axisFont: 9, axisColor: "#83827D", gridlines: false,
@@ -140,7 +140,7 @@ function readSettings(objects: Objects): Settings {
         named: pick("series", "named", "named"), othersLabel: pick("series", "othersLabel", "othersLabel"), othersColor: pick("series", "othersColor", "othersColor"),
         opacity: pick("series", "opacity", "opacity"), borderColor: pick("series", "borderColor", "borderColor"), borderWidth: pick("series", "borderWidth", "borderWidth"),
         labels: pick("labels", "show", "labels"), labelContent: pick("labels", "content", "labelContent"), labelFont: pick("labels", "fontSize", "labelFont"),
-        labelColor: pick("labels", "color", "labelColor"), labelDecimals: pick("labels", "decimals", "labelDecimals"),
+        labelColor: pick("labels", "color", "labelColor"), labelDecimals: pick("labels", "decimals", "labelDecimals"), labelBold: pick("labels", "bold", "labelBold"),
         colLabels: pick("columnLabels", "show", "colLabels"), colFont: pick("columnLabels", "fontSize", "colFont"),
         colColor: pick("columnLabels", "color", "colColor"), colBold: pick("columnLabels", "bold", "colBold"),
         totals: pick("totals", "show", "totals"), totalsPct: pick("totals", "percent", "totalsPct"),
@@ -1017,11 +1017,11 @@ export class Visual implements IVisual {
                     const chg = showChange && cell.cmp !== null && c.cmpTotal ? this.pp(share - cell.cmp / c.cmpTotal) : "";
                     const lines = chg ? 2 : 1;
                     const fl2 = Math.max(this.minFont, fl - 1);
-                    const needW = Math.max(this.textW(txt, fl), chg ? this.textW(chg, fl2) : 0) + 6;
+                    const needW = Math.max(this.textW(txt, fl) * (s.labelBold ? 1.08 : 1), chg ? this.textW(chg, fl2) : 0) + 6;
                     if (txt && w >= needW && h >= fl * lines + 4 * lines) {
                         const col = s.labelColor || (hc.on ? (fill === hc.bg ? hc.fg : this.contrast(fill)) : this.contrast(dim ? "#E8E8E8" : fill));
                         const cy = y + h / 2 - (lines - 1) * (fl / 2);
-                        const t = this.el("text", { x: x + w / 2, y: cy + fl * 0.35, "text-anchor": "middle", "font-size": fl, fill: col }, labelsG);
+                        const t = this.el("text", { x: x + w / 2, y: cy + fl * 0.35, "text-anchor": "middle", "font-size": fl, "font-weight": s.labelBold ? 700 : 400, fill: col }, labelsG);
                         // Sobre una trama, un halo del color de fondo de la celda para que el número se siga leyendo
                         const halo = pat ? { stroke: hc.on ? (fill === hc.bg ? hc.bg : fill) : fill, "stroke-width": 3, "paint-order": "stroke", "stroke-linejoin": "round" } : null;
                         if (halo) for (const k in halo) t.setAttribute(k, String((halo as any)[k]));
@@ -1819,6 +1819,7 @@ export class Visual implements IVisual {
                 num("labels", "fontSize", "Text size", s.labelFont),
                 col("labels", "color", "Text color (empty = automatic)", s.labelColor),
                 num("labels", "decimals", "Decimals of the share", s.labelDecimals),
+                tog("labels", "bold", "Bold", s.labelBold),
             ]),
             card("columnLabels", "Column labels", [
                 tog("columnLabels", "show", "Show", s.colLabels),

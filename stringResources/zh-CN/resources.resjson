@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "文本大小",
   "Prop_labels_color": "文本颜色 (空 = 自动)",
   "Prop_labels_decimals": "份额小数位数",
+  "Prop_labels_bold": "加粗",
   "Obj_columnLabels": "列标签",
   "Prop_columnLabels_show": "显示",
   "Prop_columnLabels_fontSize": "文本大小",

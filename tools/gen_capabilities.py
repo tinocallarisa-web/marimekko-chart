@@ -58,6 +58,7 @@ OBJECTS = [
         ("fontSize", "Text size", "num"),
         ("color", "Text color (empty = automatic)", "color"),
         ("decimals", "Decimals of the share", "num"),
+        ("bold", "Bold", "bool"),
     ]),
     ("columnLabels", "Column labels", [
         ("show", "Show", "bool"),

@@ -423,6 +423,13 @@
           "type": {
             "numeric": true
           }
+        },
+        "bold": {
+          "displayName": "Bold",
+          "displayNameKey": "Prop_labels_bold",
+          "type": {
+            "bool": true
+          }
         }
       }
     },

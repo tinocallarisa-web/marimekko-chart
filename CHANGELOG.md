@@ -1,6 +1,7 @@
 # Changelog — Marimekko & Mekko Chart by TCViz
 
 ## 1.0.1.0 — November 2026
+- Cell labels can be bold (Format → Cell labels → Bold).
 - Dynamic format strings per cell: labels, tooltip and screen-reader description use the format of each cell (for example euros in one column and dollars in another); column totals use the format their cells share.
 - Conditional formatting (fx) of the cell colour: Format → Series → Cell color takes a fixed colour or a rule (gradient, rules or field value) evaluated for each cell.
 - New Accessibility card: high contrast automatic or on, keyboard focus colour and width, minimum text size, pattern on Others and patterns on every series to tell them apart without colour; in high contrast each series gets its own pattern.

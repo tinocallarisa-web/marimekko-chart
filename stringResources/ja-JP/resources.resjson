@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "テキストのサイズ",
   "Prop_labels_color": "文字の色 (空 = 自動)",
   "Prop_labels_decimals": "シェアの小数点以下桁数",
+  "Prop_labels_bold": "太字",
   "Obj_columnLabels": "列のラベル",
   "Prop_columnLabels_show": "表示",
   "Prop_columnLabels_fontSize": "テキストのサイズ",

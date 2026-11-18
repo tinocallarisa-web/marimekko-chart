@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Taille du texte",
   "Prop_labels_color": "Couleur du texte (vide = automatique)",
   "Prop_labels_decimals": "Décimales de la part",
+  "Prop_labels_bold": "Gras",
   "Obj_columnLabels": "Étiquettes de colonne",
   "Prop_columnLabels_show": "Afficher",
   "Prop_columnLabels_fontSize": "Taille du texte",

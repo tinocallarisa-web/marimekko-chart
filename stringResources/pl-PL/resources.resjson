@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Rozmiar tekstu",
   "Prop_labels_color": "Kolor tekstu (puste = automatycznie)",
   "Prop_labels_decimals": "Miejsca dziesiętne udziału",
+  "Prop_labels_bold": "Pogrubienie",
   "Obj_columnLabels": "Etykiety kolumn",
   "Prop_columnLabels_show": "Pokaż",
   "Prop_columnLabels_fontSize": "Rozmiar tekstu",

@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Tamaño del texto",
   "Prop_labels_color": "Color del texto (vacío = automático)",
   "Prop_labels_decimals": "Decimales de la cuota",
+  "Prop_labels_bold": "Negrita",
   "Obj_columnLabels": "Etiquetas de columna",
   "Prop_columnLabels_show": "Mostrar",
   "Prop_columnLabels_fontSize": "Tamaño del texto",

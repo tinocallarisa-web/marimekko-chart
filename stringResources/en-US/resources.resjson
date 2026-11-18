@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Text size",
   "Prop_labels_color": "Text color (empty = automatic)",
   "Prop_labels_decimals": "Decimals of the share",
+  "Prop_labels_bold": "Bold",
   "Obj_columnLabels": "Column labels",
   "Prop_columnLabels_show": "Show",
   "Prop_columnLabels_fontSize": "Text size",

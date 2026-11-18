@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Textgröße",
   "Prop_labels_color": "Textfarbe (leer = automatisch)",
   "Prop_labels_decimals": "Dezimalstellen des Anteils",
+  "Prop_labels_bold": "Fett",
   "Obj_columnLabels": "Spaltenbeschriftungen",
   "Prop_columnLabels_show": "Anzeigen",
   "Prop_columnLabels_fontSize": "Textgröße",

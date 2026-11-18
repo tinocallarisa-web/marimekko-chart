@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Dimensione testo",
   "Prop_labels_color": "Colore testo (vuoto = automatico)",
   "Prop_labels_decimals": "Decimali della quota",
+  "Prop_labels_bold": "Grassetto",
   "Obj_columnLabels": "Etichette colonna",
   "Prop_columnLabels_show": "Mostra",
   "Prop_columnLabels_fontSize": "Dimensione testo",

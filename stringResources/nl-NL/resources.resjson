@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Tekstgrootte",
   "Prop_labels_color": "Tekstkleur (leeg = automatisch)",
   "Prop_labels_decimals": "Decimalen van het aandeel",
+  "Prop_labels_bold": "Vet",
   "Obj_columnLabels": "Kolomlabels",
   "Prop_columnLabels_show": "Tonen",
   "Prop_columnLabels_fontSize": "Tekstgrootte",

@@ -94,7 +94,7 @@ FORMAT = [
     ("Style template", "Clean, Classic, Minimal, Contrast, Compact, IBCS style. A template only fills what you have not set yourself. Setup guide: turn it back on to see the guide again."),
     ("Layout", "Columns (vertical) or bars (horizontal, Pro); values as 100% shares or absolute (bar Mekko, Pro); space between columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order."),
     ("Series", "One colour per named series; cell colour with conditional formatting (fx): a fixed colour for every cell, or a rule (gradient, rules or field value) that colours each cell; number of named series (Free 3, Pro 12); Others label and colour; opacity; cell border colour and width."),
-    ("Cell labels", "Show; share of the column or series name and share; % of the total, value, or value and share (Pro); text size; text colour (empty = automatic, white or dark depending on the cell); decimals of the share."),
+    ("Cell labels", "Show; share of the column or series name and share; % of the total, value, or value and share (Pro); text size; text colour (empty = automatic, white or dark depending on the cell); decimals of the share; bold."),
     ("Column labels", "Show; text size and colour; bold. Long names are shortened to fit; the full name is in the tooltip. Axis title: show; text (empty = automatic: the name of the Columns field and \"width = size\"); title size and colour."),
     ("Column totals", "Show the size of each column; also its % of the total; text size and colour."),
     ("Share axis", "Show; text size and colour; gridlines. Axis title: show; text (empty = automatic: \"Share of column\", or the name of the measure with absolute values); title size and colour."),

@@ -57,6 +57,7 @@
   "Prop_labels_fontSize": "Tamanho do texto",
   "Prop_labels_color": "Cor do texto (vazio = automático)",
   "Prop_labels_decimals": "Casas decimais da participação",
+  "Prop_labels_bold": "Negrito",
   "Obj_columnLabels": "Rótulos de coluna",
   "Prop_columnLabels_show": "Mostrar",
   "Prop_columnLabels_fontSize": "Tamanho do texto",
