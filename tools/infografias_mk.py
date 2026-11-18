@@ -36,7 +36,7 @@ css = I.CSS % {"pop": I.uri(os.path.join(I.BASE, "tema", "Poppins"))}
 pro_items = "".join(f"<li>{e(x)}</li>" for x in P["freemium"]["pro"])
 free_items = "".join(f"<li>{e(x)}</li>" for x in [
     "Columns at 100%: width = size of the segment", "3 named series plus Others, every column at its real 100%",
-    "Share labels, column totals with % of the total", "Share axis, legend, ordering, 6 templates",
+    "Share labels, column totals with % of the total", "Share axis, legend, ordering, Report theme + 6 styles",
     "Filtering, bookmarks, keyboard, 12 languages"])
 h2 = os.path.join(I.OUT, "marimekko-chart-infographic-pro.html")
 open(h2, "w", encoding="utf-8").write(f"""<!doctype html><html><head><meta charset="utf-8"><style>{css}

@@ -35,7 +35,7 @@ The infographic of the web is generated from this entry (`datos/demo_rtm/infogra
       { id: "F03", name: "Both readings", desc: "Share labels in the cells; the tooltip gives the share of the column and the % of the total.", free: true, pro: true },
       { id: "F04", name: "Ordering", desc: "Columns by size or data order; series by size or data order.", free: true, pro: true },
       { id: "F05", name: "Named series", desc: "Series drawn with their own colour; the rest in Others.", free: "3", pro: "12" },
-      { id: "F06", name: "Styling", desc: "6 templates incl. IBCS style, colours per series, Others label and colour, opacity, cell borders.", free: true, pro: true },
+      { id: "F06", name: "Styling", desc: "Report theme plus the six TCViz collection styles (all free), colours per series, Others label and colour, opacity, cell borders.", free: true, pro: true },
       { id: "F07", name: "Native interactions", desc: "Click a cell, a column or a series to filter; highlight, bookmarks, drilldown, context menu, keyboard, high contrast.", free: true, pro: true },
       { id: "F08", name: "Number format and 12 languages", desc: "The number format of the measure, dynamic format strings included; Format pane and texts in 12 languages.", free: true, pro: true },
       { id: "F09", name: "Focus series", desc: "Your company highlighted, the others dimmed, and a sentence: its share, strongest and weakest segment. Columns ordered by its share.", free: false, pro: true },
@@ -59,7 +59,7 @@ The infographic of the web is generated from this entry (`datos/demo_rtm/infogra
       "Follow the setup guide in the corner; with Pro, type your company in Focus series"
     ],
     freemium: {
-      free: "A complete Marimekko chart: columns at 100% with three named series plus Others, share labels, column totals with their % of the total, share axis, legend, ordering, six templates including IBCS style, filtering, highlight, bookmarks, drilldown, keyboard, high contrast and 12 languages.",
+      free: "A complete Marimekko chart: columns at 100% with three named series plus Others, share labels, column totals with their % of the total, share axis, legend, ordering, Report theme plus the six TCViz collection styles, filtering, highlight, bookmarks, drilldown, keyboard, high contrast and 12 languages.",
       pro: [
         "4 to 12 named series",
         "Your company highlighted, with a summary sentence",
@@ -71,7 +71,7 @@ The infographic of the web is generated from this entry (`datos/demo_rtm/infogra
       ]
     },
     formattingPane: [
-      { group: "Style", items: "Clean, Classic, Minimal, Contrast, Compact, IBCS style; setup guide" },
+      { group: "Style", items: "Report theme, Boardroom, Ledger, Editorial, Signal, Aurora, Terrace (all free); setup guide" },
       { group: "Layout", items: "Columns or bars (Pro); 100% or absolute (Pro); space between columns; order of columns and series" },
       { group: "Series", items: "Colour per series, number of named series, Others label and colour, opacity, cell borders" },
       { group: "Labels", items: "Cell labels: share, name and share; value or % of the total (Pro); decimals; column labels and totals" },

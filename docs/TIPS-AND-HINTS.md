@@ -35,7 +35,8 @@ Column widths are shares of what is in the chart, so they always add up to 100% 
 
 ## Format pane
 
-- Style template — Clean, Classic, Minimal, Contrast, Compact and IBCS style; your own settings win. The setup
+- Style template — Report theme or one of the six TCViz collection styles (Boardroom, Ledger,
+  Editorial, Signal, Aurora, Terrace), all free; your own settings win and high contrast wins over the style. The setup
   guide can be turned back on here.
 - Layout — columns (vertical) or bars (horizontal, Pro); 100% (share) or absolute values (bar Mekko, Pro); space
   between columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order.

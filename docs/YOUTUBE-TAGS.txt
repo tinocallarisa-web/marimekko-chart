@@ -16,4 +16,4 @@ Sales and marketing:
 channel mix, category management, route to market
 
 Power BI general:
-Power BI tutorial, Power BI tips, Power BI dashboard, IBCS, stacked column alternative
+Power BI tutorial, Power BI tips, Power BI dashboard, stacked column alternative

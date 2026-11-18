@@ -2,6 +2,7 @@
 
 ## 1.0.1.0 — November 2026
 - Cell labels can be bold (Format → Cell labels → Bold).
+- Style templates are now the same as the rest of the TCViz collection: Report theme (follows the theme of the report) plus Boardroom, Ledger, Editorial, Signal, Aurora and Terrace, with the same colours, background and font as Treemap, Line Chart and the other visuals, so a page reads as one report. All seven are free. They colour the cells, Others, column labels, totals, axis and axis titles, legend, focus series, change in share and small multiples, and only fill what you have not set yourself; high contrast always wins. Reports saved with the 1.0.0 templates open with the closest style (Classic → Ledger, Minimal → Editorial, Contrast → Signal, Compact → Report theme, IBCS style → Editorial).
 - Dynamic format strings per cell: labels, tooltip and screen-reader description use the format of each cell (for example euros in one column and dollars in another); column totals use the format their cells share.
 - Conditional formatting (fx) of the cell colour: Format → Series → Cell color takes a fixed colour or a rule (gradient, rules or field value) evaluated for each cell.
 - New Accessibility card: high contrast automatic or on, keyboard focus colour and width, minimum text size, pattern on Others and patterns on every series to tell them apart without colour; in high contrast each series gets its own pattern.

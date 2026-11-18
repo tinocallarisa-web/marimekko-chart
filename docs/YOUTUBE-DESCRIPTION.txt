@@ -42,7 +42,7 @@ WHAT IT DOES
 ✅ Cell labels as share of the column, % of the total, value, or series name
 ✅ Columns or bars; 100% shares or absolute values (bar Mekko)
 ✅ Others is never dropped: every column keeps its real 100%
-✅ Six style templates, including an IBCS style, and a setup guide inside the visual
+✅ Report theme plus the six TCViz collection styles, and a setup guide inside the visual
 ✅ Click to filter, highlight, bookmarks, drilldown, keyboard navigation and high contrast
 ✅ The measure's number format, dynamic format strings included; twelve languages
 ✅ No network requests: everything is computed inside your report

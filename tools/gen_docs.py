@@ -74,7 +74,7 @@ FREE_PRO = [
     ("Column totals with their % of the total; share axis with gridlines; legend top, bottom or right", "✓", "✓"),
     ("Order columns by data order or size; order series by size or data order", "✓", "✓"),
     ("Colours per series, Others label and colour, opacity, cell borders", "✓", "✓"),
-    ("6 style templates, including IBCS style; setup guide inside the visual", "✓", "✓"),
+    ("Report theme plus the six TCViz collection styles (Boardroom, Ledger, Editorial, Signal, Aurora, Terrace), all free; setup guide inside the visual", "✓", "✓"),
     ("Tooltip with both readings: share of the column and % of the total", "✓", "✓"),
     ("Cross-filtering, highlight, bookmarks, drilldown, context menu, keyboard, high contrast", "✓", "✓"),
     ("Conditional formatting (fx) of the cell colour: a rule colours each cell", "✓", "✓"),
@@ -91,7 +91,7 @@ FREE_PRO = [
 ]
 
 FORMAT = [
-    ("Style template", "Clean, Classic, Minimal, Contrast, Compact, IBCS style. A template only fills what you have not set yourself. Setup guide: turn it back on to see the guide again."),
+    ("Style template", "Report theme (follows the theme of the report) or one of the six collection styles shared by every TCViz visual: Boardroom, Ledger, Editorial, Signal, Aurora, Terrace. All seven are free. A style only fills what you have not set yourself, and high contrast always wins over it. Reports saved with the 1.0.0 templates open with the closest style. Setup guide: turn it back on to see the guide again."),
     ("Layout", "Columns (vertical) or bars (horizontal, Pro); values as 100% shares or absolute (bar Mekko, Pro); space between columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order."),
     ("Series", "One colour per named series; cell colour with conditional formatting (fx): a fixed colour for every cell, or a rule (gradient, rules or field value) that colours each cell; number of named series (Free 3, Pro 12); Others label and colour; opacity; cell border colour and width."),
     ("Cell labels", "Show; share of the column or series name and share; % of the total, value, or value and share (Pro); text size; text colour (empty = automatic, white or dark depending on the cell); decimals of the share; bold."),

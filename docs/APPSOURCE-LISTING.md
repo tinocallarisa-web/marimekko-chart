@@ -70,7 +70,7 @@ WORKS LIKE A NATIVE VISUAL
 • Highlight from other visuals, bookmarks restore the selection, drilldown on a hierarchy, Power BI context menu
 • Keyboard navigation, screen-reader descriptions and high contrast
 • The number format of the measure, dynamic format strings included; Format pane and texts in 12 languages
-• Six style templates, including an IBCS style; format on the canvas; a setup guide and a start screen
+• Report theme plus the six TCViz collection styles (Boardroom, Ledger, Editorial, Signal, Aurora, Terrace), all free; format on the canvas; a setup guide and a start screen
 
 PRIVACY
 

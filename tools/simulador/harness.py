@@ -223,6 +223,68 @@ async def run_pro(b):
         check(f"FC.CART01 {name}: dentro del visual y sin pisar el gráfico", ok and inside and no_overlap and not errs, f"{[(x['t'], x['fs']) for x in tt]} ok={ok} dentro={inside} sin_pisar={no_overlap} low={low:.0f} lm={lm:.0f} {[ (round(x['r']['left']), round(x['r']['top']), round(x['r']['right']), round(x['r']['bottom'])) for x in tt]} {errs[:1]}")
         await pg.close()
 
+    # 5. Estilos de la colección (1.0.1.0): Report theme + seis, los mismos tokens que Treemap y Line Chart
+    TOK = {"boardroom": ("#16263D", "#C9A45C"), "ledger": ("#FBF8EF", "#7A1F1F"), "editorial": ("#FFFFFF", "#D7263D"),
+           "signal": ("#FFFFFF", "#1F7A4D"), "aurora": ("#10395E", "#7CE7D0"), "terrace": ("#FBF5EC", "#B5532A")}
+    LOOK = """() => { const r = document.querySelector('.tcmk'); const cs = getComputedStyle(r);
+        return { bg: r.style.background, font: r.style.fontFamily,
+                 fills: Array.from(document.querySelectorAll('g[data-pt] rect.tcmk-hit')).map(x => x.getAttribute('fill')),
+                 leg: Array.from(document.querySelectorAll('.tcmk-legend text')).map(x => x.getAttribute('fill')),
+                 col: Array.from(document.querySelectorAll('.tcmk-collabels text')).map(x => x.getAttribute('fill')) }; }"""
+    def rgb(h): return "rgb(%d, %d, %d)" % tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+    for name in ["clean"] + list(TOK):
+        pg, errs = await page(b, W, H, {})
+        await update(pg, dataview(objects={"style": {"template": name}, "series": {"named": 4}}), W, H)
+        await pg.screenshot(path=os.path.join(OUT, f"07_estilo_{name}.png"))
+        lk = await pg.evaluate(LOOK)
+        if name == "clean":
+            ok = lk["bg"] in ("", "transparent") and "#118DFF" in lk["fills"] and lk["font"] == ""
+        else:
+            bg, s0 = TOK[name]
+            ok = (rgb(bg) in lk["bg"]) and s0 in lk["fills"] and "#118DFF" not in lk["fills"]
+            if name in ("ledger", "editorial"): ok = ok and "Georgia" in lk["font"]
+        check(f"estilo {name}: fondo, paleta de series y fuente", ok and not errs, f"bg={lk['bg'][:60]} font={lk['font']} fills={sorted(set(lk['fills']))[:5]} {errs[:1]}")
+        await pg.close()
+    # Plantillas antiguas: se leen con el estilo equivalente y no rompen
+    for old, new in (("classic", "ledger"), ("minimal", "editorial"), ("contrast", "signal"), ("compact", "clean"), ("ibcs", "editorial"), ("inexistente", "clean")):
+        pg, errs = await page(b, W, H, {})
+        await update(pg, dataview(objects={"style": {"template": old}, "series": {"named": 4}}), W, H)
+        if old in ("classic", "ibcs"): await pg.screenshot(path=os.path.join(OUT, f"07b_plantilla_antigua_{old}.png"))
+        lk = await pg.evaluate(LOOK)
+        fm = await pg.evaluate("() => __v.getFormattingModel()")
+        tpl = [sl for c in fm["cards"] if c["uid"] == "style_card" for g in c["groups"] for sl in g["slices"] if sl["uid"] == "style_template"][0]["control"]["properties"]
+        ev = await pg.evaluate("() => __ev.join('')")
+        ok_draw = len(lk["fills"]) > 0 and ev == "SF" and not errs
+        ok_map = tpl["value"]["value"] == new and (new == "clean" or rgb(TOK[new][0]) in lk["bg"])
+        check(f"plantilla antigua {old} -> {new}", ok_draw and ok_map, f"panel={tpl['value']['value']} bg={lk['bg'][:40]} ev={ev} {errs[:1]}")
+        if old == "classic":
+            items = [i["value"] for i in tpl["items"]]
+            check("el desplegable ofrece solo los siete nuevos, sin (Pro)", items == ["clean"] + list(TOK) and not any("Pro" in i["displayName"] for i in tpl["items"]), str([i["displayName"] for i in tpl["items"]]))
+        await pg.close()
+    # Un ajuste tocado a mano gana al estilo; alto contraste gana al estilo
+    pg, errs = await page(b, W, H, {})
+    await update(pg, dataview(objects={"style": {"template": "boardroom"}, "legend": {"color": {"solid": {"color": "#FF0000"}}}, "series": {"named": 4}}), W, H)
+    lk = await pg.evaluate(LOOK)
+    check("ajuste a mano (color de la leyenda) gana al estilo; el resto, del estilo", set(lk["leg"]) == {"#FF0000"} and set(lk["col"]) == {"#F2F0E8"}, f"leg={set(lk['leg'])} col={set(lk['col'])}")
+    await update(pg, dataview(objects={"style": {"template": "boardroom"}, "accessibility": {"highContrast": "on"}, "series": {"named": 4}}), W, H)
+    await pg.screenshot(path=os.path.join(OUT, "07c_estilo_con_alto_contraste.png"))
+    lk = await pg.evaluate(LOOK)
+    check("alto contraste manda sobre el estilo", set(lk["fills"]) <= {"#FFFFFF", "#1F4E80"} and rgb("#FFFFFF") in lk["bg"] and lk["font"] == "", f"bg={lk['bg']} fills={set(lk['fills'])}")
+    await pg.close()
+    # Guía de configuración (paso 3): rejilla con los siete estilos, sin "(Pro)"
+    pg, errs = await page(b, W, H, {})
+    await update(pg, dataview(objects={"style": {"template": "aurora"}, "series": {"named": 4}}), W, H, view=1)
+    for _ in range(3):
+        btn = await pg.query_selector(".tcmk-g-main")
+        if not btn: break
+        if await pg.evaluate("() => document.querySelectorAll('.tcmk-g-chip').length") > 0: break
+        await btn.click(); await pg.wait_for_timeout(200)
+    await pg.screenshot(path=os.path.join(OUT, "07d_guia_rejilla_estilos.png"))
+    chips = await pg.evaluate("() => Array.from(document.querySelectorAll('.tcmk-g-chip')).map(c => [c.textContent, c.getAttribute('aria-pressed')])")
+    check("guía: siete estilos, Aurora marcado, sin (Pro)", [c[0] for c in chips] == ["Report theme", "Boardroom", "Ledger", "Editorial", "Signal", "Aurora", "Terrace"]
+          and dict(chips).get("Aurora") == "true" and not any("Pro" in c[0] for c in chips), str(chips))
+    await pg.close()
+
     # Patrón en Others (Free: 3 series + Others)
     pg, errs = await page(b, W, H, {})
     await update(pg, dataview(objects={"series": {"named": 3}}), W, H)
@@ -247,6 +309,11 @@ async def run_free(b):
     await pg.screenshot(path=os.path.join(OUT, "05b_lectura_resultado_gratuito.png"))
     wm = await pg.evaluate("() => getComputedStyle(document.querySelector('.tcviz-wm')).display")
     check("en lectura no hay marca (resultado gratuito)", wm == "none", wm)
+    await update(pg, dataview(objects={"style": {"template": "boardroom", "guide": False}, "series": {"named": 3}}), W, H, view=1)
+    await pg.screenshot(path=os.path.join(OUT, "07e_estilo_gratis_sin_licencia.png"))
+    wm = await pg.evaluate("() => getComputedStyle(document.querySelector('.tcviz-wm')).display")
+    bg = await pg.evaluate("() => document.querySelector('.tcmk').style.background")
+    check("estilo Boardroom gratis: sin licencia y editando, sin marca de agua", wm == "none" and "22, 38, 61" in bg, f"wm={wm} bg={bg}")
     check("sin errores de consola (free)", not errs, "; ".join(errs[:2]))
     await pg.close()
 

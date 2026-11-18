@@ -223,3 +223,9 @@ M = {
 "Share of column": ["Cuota en la columna", "Participação na coluna", "Part dans la colonne", "Anteil an der Spalte", "Quota nella colonna", "Aandeel in de kolom", "Udział w kolumnie", "列内のシェア", "列内份额", "열 내 점유율"],
 "{0} (width = size)": ["{0} (ancho = tamaño)", "{0} (largura = tamanho)", "{0} (largeur = taille)", "{0} (Breite = Größe)", "{0} (larghezza = dimensione)", "{0} (breedte = grootte)", "{0} (szerokość = wielkość)", "{0} (幅 = 規模)", "{0} (宽度 = 规模)", "{0}(너비 = 규모)"],
 }
+
+# Estilos de la colección (1.0.1.0): Report theme se traduce como en Treemap; los seis estilos son nombres propios
+# y no se traducen. Gratis en este visual: sin "(Pro)".
+M["Report theme"] = ["Tema del informe", "Tema do relatório", "Thème du rapport", "Berichtsdesign", "Tema del report", "Rapportthema", "Motyw raportu", "レポートのテーマ", "报表主题", "보고서 테마"]
+for _n in ("Boardroom", "Ledger", "Editorial", "Signal", "Aurora", "Terrace"):
+    M[_n] = [_n] * 10

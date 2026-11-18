@@ -104,27 +104,57 @@ const DEFAULTS: Settings = {
 };
 
 /**
- * Plantillas: un punto de partida. Solo rellenan lo que el usuario no ha tocado: un ajuste escrito
- * a mano (presente en metadata.objects) gana siempre a la plantilla.
+ * Estilos: los mismos de la colección que KPI Card, Pareto, Line Chart, Histogram y Treemap (mismos tokens, mismos
+ * colores), para que una página se lea como un solo informe. "clean" = Report theme (sigue el tema del informe).
+ * En el Marimekko los siete son GRATIS (decisión de Tino, 18-11-2026): no entran en el gating ni en la marca de agua.
+ * Una plantilla solo rellena lo que el usuario no ha tocado: un ajuste escrito a mano (presente en metadata.objects)
+ * gana siempre. Alto contraste manda sobre el estilo.
  */
-const TEMPLATES: Record<string, Partial<Settings>> = {
-    clean: {},
-    classic: { gap: 0, borderColor: "#FFFFFF", borderWidth: 1.5, gridlines: true },
-    minimal: { gap: 4, borderWidth: 0, axis: false, totals: false, labelFont: 9, colColor: "#605E5C" },
-    contrast: { gap: 1, borderColor: "#252423", borderWidth: 1, colBold: true, colColor: "#252423", labelFont: 11 },
-    compact: { gap: 1, labelFont: 8, colFont: 9, totalsFont: 8, legendFont: 9, axisFont: 8 },
-    // Estética de IBCS (sobria, grises, sin adornos). Es un estilo: no afirma cumplimiento del estándar.
-    ibcs: { gap: 1, borderColor: "#FFFFFF", borderWidth: 1, colColor: "#262626", legendColor: "#262626", totalsColor: "#262626", focusColor: "#262626" },
+const COLLECTION_STYLES = ["boardroom", "ledger", "editorial", "signal", "aurora", "terrace"];
+interface StyleTokens { bg: string; text: string; axis: string; grid: string; plan: string; up: string; down: string; series: string[]; font?: string; grad?: string; }
+const STYLE_TOKENS: Record<string, StyleTokens> = {
+    boardroom: { bg: "#16263D", text: "#F2F0E8", axis: "#9FB0C6", grid: "#2A3E5C", plan: "#6FCF97", up: "#6FCF97", down: "#EB8A7B", series: ["#C9A45C", "#8FB8E8", "#EB8A7B", "#6FCF97", "#C5D3E3"] },
+    ledger: { bg: "#FBF8EF", text: "#231F16", axis: "#6E6652", grid: "#D9D2BE", plan: "#946A10", up: "#2F6B3B", down: "#A32A2A", series: ["#7A1F1F", "#3A3528", "#2F6B3B", "#946A10", "#B7AD92"], font: "Georgia, serif" },
+    editorial: { bg: "#FFFFFF", text: "#111111", axis: "#5F5F5F", grid: "#E2E2E2", plan: "#111111", up: "#111111", down: "#D7263D", series: ["#D7263D", "#111111", "#5F5F5F", "#BDBDBD", "#8C1C2B"], font: "Georgia, serif" },
+    signal: { bg: "#FFFFFF", text: "#14202B", axis: "#566472", grid: "#D9DEE4", plan: "#B7791F", up: "#1F7A4D", down: "#C0392B", series: ["#1F7A4D", "#14202B", "#B7791F", "#C0392B", "#9AA5B1"] },
+    aurora: { bg: "#10395E", text: "#FFFFFF", axis: "#C5D3E3", grid: "#3A5C7E", plan: "#FFD27D", up: "#7CE7D0", down: "#FF9DB0", series: ["#7CE7D0", "#FFD27D", "#FF9DB0", "#9DB7FF", "#C5D3E3"], grad: "linear-gradient(135deg, #1B1147, #10395E 50%, #0B5A5E)" },
+    terrace: { bg: "#FBF5EC", text: "#3A2A1E", axis: "#7A6450", grid: "#E5D6C2", plan: "#5E7128", up: "#5E7128", down: "#B5372A", series: ["#B5532A", "#5E7128", "#B5782A", "#B5372A", "#C9A77E"] },
 };
+const TEMPLATES: Record<string, Partial<Settings>> = { clean: {} };
+for (const k of COLLECTION_STYLES) {
+    const t = STYLE_TOKENS[k];
+    // Las juntas entre celdas toman el fondo del estilo; Others, el color de la rejilla (con su trama); la serie
+    // propia, el color de acento ("plan") del estilo; textos principales en "text" y secundarios en "axis".
+    TEMPLATES[k] = { borderColor: t.bg, othersColor: t.grid, focusColor: t.plan, posColor: t.up, negColor: t.down,
+        colColor: t.text, totalsColor: t.axis, axisColor: t.axis, legendColor: t.axis,
+        smTitleColor: t.text, smBorderColor: t.grid, colTitleColor: t.axis, axisTitleColor: t.axis };
+}
 
-/** Tonos de gris para el estilo IBCS: las series se distinguen por gris, no por colores del tema. */
-const IBCS_GREYS = ["#404040", "#7F7F7F", "#A6A6A6", "#BFBFBF", "#595959", "#D9D9D9"];
+/**
+ * Plantillas antiguas (1.0.0.x) -> estilo de la colección. Un informe guardado con ellas no se rompe: se lee con el
+ * estilo que más se le parece y el desplegable ya solo ofrece los siete nuevos.
+ *   classic  -> ledger     (sobria y con rejilla, de papel)
+ *   minimal  -> editorial  (blanco, tinta negra, sin adornos)
+ *   contrast -> signal     (tinta oscura y colores firmes sobre blanco)
+ *   compact  -> clean      (solo cambiaba tamaños: se queda con el tema del informe)
+ *   ibcs     -> editorial  (grises y negro sobre blanco con un solo acento: lo más cercano a la estética IBCS;
+ *                           ledger tiñe el fondo de crema y los tonos de sepia, que IBCS no usa)
+ * Lo que la plantilla antigua cambiaba fuera del color (huecos, tamaños, ocultar eje o totales) vuelve al valor por
+ * defecto si el usuario no lo había tocado.
+ */
+const LEGACY_TEMPLATES: Record<string, string> = { classic: "ledger", minimal: "editorial", contrast: "signal", compact: "clean", ibcs: "editorial" };
+
+function templateName(raw: unknown): string {
+    const v = String(raw ?? "") || DEFAULTS.template;
+    const m = LEGACY_TEMPLATES[v] ?? v;
+    return TEMPLATES[m] ? m : DEFAULTS.template;
+}
 
 type Objects = powerbi.DataViewObjects | undefined;
 
 function readSettings(objects: Objects): Settings {
-    const tplName = (objects?.["style"]?.["template"] as string) || DEFAULTS.template;
-    const tpl = TEMPLATES[tplName] || {};
+    const tplName = templateName(objects?.["style"]?.["template"]);
+    const tpl = TEMPLATES[tplName];
     const pick = <K extends keyof Settings>(obj: string, prop: string, key: K): Settings[K] => {
         const raw = objects?.[obj]?.[prop];
         if (raw !== undefined && raw !== null) {
@@ -398,6 +428,24 @@ export class Visual implements IVisual {
         return this.isPro || this.isPreview();
     }
 
+    /** Tokens del estilo de la colección que se dibuja (null con Report theme o alto contraste). Caché por dibujo. */
+    private look(): StyleTokens | null { return this.curLook; }
+    private curLook: StyleTokens | null = null;
+    private computeLook(): StyleTokens | null {
+        const t = this.s.template;
+        return !this.hc().on && COLLECTION_STYLES.indexOf(t) >= 0 ? STYLE_TOKENS[t] : null;
+    }
+
+    /** Tinta principal y secundaria: la del estilo, o la del tema del informe. */
+    private inkMain(): string {
+        const p: any = this.host.colorPalette;
+        return this.look()?.text ?? p?.foreground?.value ?? "#252423";
+    }
+    private inkDim(): string {
+        const p: any = this.host.colorPalette;
+        return this.look()?.axis ?? p?.foregroundNeutralSecondary?.value ?? "#605E5C";
+    }
+
     private roleBound(role: string): boolean {
         return !!this.lastDv?.metadata?.columns?.some(c => c.roles?.[role]);
     }
@@ -491,14 +539,15 @@ export class Visual implements IVisual {
         }
         const namedSet = new Set(named);
         const ordered = (s.sortSeries === "data" ? serOrder.filter(x => namedSet.has(x)) : bySize.filter(x => namedSet.has(x)));
-        const isIbcs = s.template === "ibcs";
+        // Con un estilo de la colección las series toman su paleta (como el resto de la cartera); si no, la del tema.
+        const look = this.computeLook();
         this.series = ordered.map((nm, k) => {
             const row = serFirstRow.get(nm);
             const own = serCol ? (serCol.objects?.[row]?.["series"]?.["fill"] as any)?.solid?.color : undefined;
             const selector = serCol
                 ? (this.host.createSelectionIdBuilder().withCategory(serCol, row).createSelectionId() as any).getSelector?.()
                 : undefined;
-            let color = own || (isIbcs ? IBCS_GREYS[k % IBCS_GREYS.length] : this.host.colorPalette.getColor(nm).value);
+            let color = own || (look ? look.series[k % look.series.length] : this.host.colorPalette.getColor(nm).value);
             if (focusName && nm.toLowerCase() === focusName) color = s.focusColor || color;
             return { key: "s" + k, name: nm, color, others: false, total: serTotal.get(nm), selector };
         });
@@ -724,7 +773,7 @@ export class Visual implements IVisual {
             else if (kind === 6) { ln(1, 0, 1, 6); ln(0, 1, 6, 1); }
             else ln(1, 0, 1, 6);
         };
-        make("tcmk-stripe", 0, hc.on ? hc.fg : "#605E5C", hc.on ? 1 : 0.45);
+        make("tcmk-stripe", 0, hc.on ? hc.fg : (this.look()?.axis ?? "#605E5C"), hc.on ? 1 : 0.45);
         for (let i = 0; i < PATTERNS; i++) {
             if (hc.on) make("tcmk-p" + i + "h", i + 1, hc.fg, 1);
             else { make("tcmk-p" + i + "d", i + 1, "#252423", 0.45); make("tcmk-p" + i + "l", i + 1, "#FFFFFF", 0.65); }
@@ -745,7 +794,12 @@ export class Visual implements IVisual {
         if (this.destroyed || !this.lastOptions) return;
         const vp = this.lastOptions.viewport;
         const hc = this.hc();
-        this.root.style.background = hc.on ? hc.bg : (this.s.background || "transparent");
+        this.curLook = this.hasData ? this.computeLook() : null;
+        const look = this.curLook;
+        // Con un estilo de la colección manda su fondo: el tema del informe rellena "background" en todos los visuales
+        // (visualStyles "*") y no se distingue de un color puesto a mano.
+        this.root.style.background = hc.on ? hc.bg : (look ? (look.grad ?? look.bg) : (this.s.background || "transparent"));
+        this.root.style.fontFamily = look?.font ?? "";
         this.subSelectable(this.root, "background", this.t("Obj_background", "Background"), powerbi.visuals.SubSelectionStylesType.Shape);
         this.guideEl.style.display = "none";
         if (!this.hasData) {
@@ -797,7 +851,7 @@ export class Visual implements IVisual {
             const fs2 = Math.max(this.minFont, fs - 1);
             lines.forEach((ln, k) => {
                 const t = this.el("text", { x: 6, y: top + fs * (k + 1) + k * 4, "font-size": k ? fs2 : fs, "font-weight": k ? 400 : 600,
-                    fill: hc.on ? hc.fg : (k ? "#605E5C" : "#252423") }, g);
+                    fill: hc.on ? hc.fg : (k ? (this.look() ? this.inkDim() : "#605E5C") : (this.look() ? this.inkMain() : "#252423")) }, g);
                 t.textContent = this.fit(ln, k ? fs2 : fs, W - 12);
             });
             top += lines.length * (fs + 4) + 6;
@@ -961,12 +1015,12 @@ export class Visual implements IVisual {
                 const lab = absolute ? this.shortFmt(maxCol * f) : this.pct(f);
                 if (vertical) {
                     const y = mT + ph - f * ph;
-                    if (s.gridlines && f > 0) this.el("line", { x1: mL, x2: mL + pw, y1: y, y2: y, stroke: hc.on ? hc.fg : "#E6E4E0", "stroke-width": 1 }, ax);
+                    if (s.gridlines && f > 0) this.el("line", { x1: mL, x2: mL + pw, y1: y, y2: y, stroke: hc.on ? hc.fg : (this.look()?.grid ?? "#E6E4E0"), "stroke-width": 1 }, ax);
                     const t = this.el("text", { x: mL - 4, y: y + fa * 0.35, "text-anchor": "end", "font-size": fa, fill: hc.on ? hc.fg : s.axisColor }, ax);
                     t.textContent = lab;
                 } else {
                     const x = mL + f * pw;
-                    if (s.gridlines && f > 0) this.el("line", { x1: x, x2: x, y1: mT, y2: mT + ph, stroke: hc.on ? hc.fg : "#E6E4E0", "stroke-width": 1 }, ax);
+                    if (s.gridlines && f > 0) this.el("line", { x1: x, x2: x, y1: mT, y2: mT + ph, stroke: hc.on ? hc.fg : (this.look()?.grid ?? "#E6E4E0"), "stroke-width": 1 }, ax);
                     const t = this.el("text", { x, y: mT + ph + fa + 3, "text-anchor": f === 0 ? "start" : f === 1 ? "end" : "middle", "font-size": fa, fill: hc.on ? hc.fg : s.axisColor }, ax);
                     t.textContent = lab;
                 }
@@ -1019,7 +1073,7 @@ export class Visual implements IVisual {
                     const fl2 = Math.max(this.minFont, fl - 1);
                     const needW = Math.max(this.textW(txt, fl) * (s.labelBold ? 1.08 : 1), chg ? this.textW(chg, fl2) : 0) + 6;
                     if (txt && w >= needW && h >= fl * lines + 4 * lines) {
-                        const col = s.labelColor || (hc.on ? (fill === hc.bg ? hc.fg : this.contrast(fill)) : this.contrast(dim ? "#E8E8E8" : fill));
+                        const col = s.labelColor || (hc.on ? (fill === hc.bg ? hc.fg : this.contrast(fill)) : this.contrast(dim ? this.dimmedUnder(fill) : fill));
                         const cy = y + h / 2 - (lines - 1) * (fl / 2);
                         const t = this.el("text", { x: x + w / 2, y: cy + fl * 0.35, "text-anchor": "middle", "font-size": fl, "font-weight": s.labelBold ? 700 : 400, fill: col }, labelsG);
                         // Sobre una trama, un halo del color de fondo de la celda para que el número se siga leyendo
@@ -1088,6 +1142,19 @@ export class Visual implements IVisual {
         const focus = this.focusSeries(s);
         if (focus && focus.key === se.key) return se.color;
         return cell.rule || s.cellColor || se.color;
+    }
+
+    /**
+     * Color aparente de una celda atenuada (45 % de opacidad) para elegir la tinta de su etiqueta. Sin estilo, el gris
+     * claro de siempre; con estilo, la mezcla con su fondo (en Boardroom y Aurora el fondo es oscuro).
+     */
+    private dimmedUnder(fill: string): string {
+        const look = this.look();
+        const a = /^#?([0-9a-f]{6})$/i.exec(fill || ""), b = look ? /^#?([0-9a-f]{6})$/i.exec(look.bg) : null;
+        if (!a || !b) return "#E8E8E8";
+        const x = parseInt(a[1], 16), y = parseInt(b[1], 16);
+        const mix = (sh: number) => Math.round(((x >> sh) & 255) * 0.45 + ((y >> sh) & 255) * 0.55);
+        return "#" + ((1 << 24) + (mix(16) << 16) + (mix(8) << 8) + mix(0)).toString(16).slice(1);
     }
 
     /** Texto blanco o casi negro según la luminancia del fondo. */
@@ -1169,7 +1236,7 @@ export class Visual implements IVisual {
         this.noteEl.style.display = msgs.length ? "block" : "none";
         this.noteEl.textContent = msgs.join(" · ");
         const hc = this.hc();
-        this.noteEl.style.color = hc.on ? hc.fg : "#83827D";
+        this.noteEl.style.color = hc.on ? hc.fg : (this.look() ? this.inkDim() : "#83827D");
         return msgs.length > 0;
     }
 
@@ -1278,7 +1345,8 @@ export class Visual implements IVisual {
         } else {
             titulo.textContent = this.t("Guide_Style", "Pick a style");
             const rejilla = document.createElement("div"); rejilla.className = "tcmk-g-grid";
-            for (const nombre of Object.keys(TEMPLATES)) {
+            // Los siete estilos son gratis en este visual: sin "(Pro)". Los nombres de la colección no se traducen.
+            for (const nombre of ["clean", ...COLLECTION_STYLES]) {
                 const tpl = { ...DEFAULTS, ...TEMPLATES[nombre] };
                 const chip = document.createElement("button");
                 chip.type = "button";
@@ -1287,9 +1355,9 @@ export class Visual implements IVisual {
                 chip.className = "tcmk-g-chip";
                 chip.style.borderColor = actual ? azul : "#C8C6C4";
                 chip.style.borderWidth = actual ? "2px" : "1px";
-                chip.appendChild(this.miniMekko(tpl, nombre === "ibcs", hc));
+                chip.appendChild(this.miniMekko(tpl, STYLE_TOKENS[nombre] ?? null, hc));
                 const etq = document.createElement("div");
-                etq.textContent = this.t("Enum_tpl_" + nombre, nombre.charAt(0).toUpperCase() + nombre.slice(1));
+                etq.textContent = nombre === "clean" ? this.t("Enum_tpl_clean", "Report theme") : nombre.charAt(0).toUpperCase() + nombre.slice(1);
                 chip.appendChild(etq);
                 chip.addEventListener("click", () => {
                     this.host.persistProperties({ merge: [{ objectName: "style", selector: null as any, properties: { template: nombre } }] });
@@ -1303,11 +1371,12 @@ export class Visual implements IVisual {
         el.appendChild(pie);
     }
 
-    /** Miniatura de una plantilla: tres columnas de ancho distinto con tres series. */
-    private miniMekko(t: Settings, ibcs: boolean, hc: boolean): SVGSVGElement {
+    /** Miniatura de un estilo: tres columnas de ancho distinto con tres series, con su paleta y su fondo. */
+    private miniMekko(t: Settings, tok: StyleTokens | null, hc: boolean): SVGSVGElement {
         const svg = document.createElementNS(SVG, "svg") as SVGSVGElement;
         svg.setAttribute("width", "60"); svg.setAttribute("height", "44"); svg.setAttribute("aria-hidden", "true");
-        const colors = hc ? ["#FFFFFF", "#AAAAAA", "#555555"] : ibcs ? IBCS_GREYS.slice(0, 3) : this.series.filter(x => !x.others).slice(0, 3).map(x => x.color).concat(["#2B6CB0", "#7CB5D1", "#C8C6C4"]).slice(0, 3);
+        if (tok && !hc) svg.style.background = tok.grad ?? tok.bg;
+        const colors = hc ? ["#FFFFFF", "#AAAAAA", "#555555"] : tok ? tok.series.slice(0, 3) : this.series.filter(x => !x.others).slice(0, 3).map(x => this.host.colorPalette.getColor(x.name).value).concat(["#2B6CB0", "#7CB5D1", "#C8C6C4"]).slice(0, 3);
         const widths = [26, 16, 12], shares = [[0.5, 0.3, 0.2], [0.3, 0.45, 0.25], [0.6, 0.2, 0.2]];
         const gap = Math.min(3, t.gap);
         let x = 2;
@@ -1789,9 +1858,8 @@ export class Visual implements IVisual {
 
         return { cards: [
             card("style", "Style template", [
-                dd("style", "template", "Template", s.template, [["clean", "Enum_tpl_clean", "Clean"], ["classic", "Enum_tpl_classic", "Classic"],
-                    ["minimal", "Enum_tpl_minimal", "Minimal"], ["contrast", "Enum_tpl_contrast", "Contrast"], ["compact", "Enum_tpl_compact", "Compact"],
-                    ["ibcs", "Enum_tpl_ibcs", "IBCS style"]]),
+                dd("style", "template", "Template", s.template, [["clean", "Enum_tpl_clean", "Report theme"],
+                    ...COLLECTION_STYLES.map(k => [k, "Enum_tpl_" + k, k.charAt(0).toUpperCase() + k.slice(1)] as [string, string, string])]),
                 tog("style", "guide", "Setup guide", s.guide),
             ]),
             card("layout", "Layout", [
