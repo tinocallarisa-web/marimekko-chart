@@ -1,6 +1,8 @@
 {
  "UI_Blank": "(Blank)",
  "UI_Others": "Others",
+ "UI_ColTitle": "{0} (width = size)",
+ "UI_ShareTitle": "Share of column",
  "UI_Summary": "{0} holds {1} of a {2} market; strongest in {3} ({4}), weakest in {5} ({6}).",
  "UI_SummaryChange": "{0} vs the comparison period, mostly from {1}.",
  "UI_ColumnsOf": "Showing {0} of {1} columns.",

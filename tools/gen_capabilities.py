@@ -22,6 +22,10 @@ def E(*items):
 
 # (objeto, nombre, [(prop, nombre, tipo)])  tipo: bool | num | text | color | colorfx | enum:[...]
 OBJECTS = [
+    ("general", "General", [
+        # F11: el formato dinámico de la medida llega por fila en values[c].objects[i].general.formatString
+        ("formatString", "Format string", "fmt"),
+    ]),
     ("style", "Style template", [
         ("template", "Template", E(("clean", "Enum_tpl_clean", "Clean"), ("classic", "Enum_tpl_classic", "Classic"),
                                     ("minimal", "Enum_tpl_minimal", "Minimal"), ("contrast", "Enum_tpl_contrast", "Contrast"),
@@ -41,6 +45,8 @@ OBJECTS = [
         ("othersLabel", "Others label", "text"),
         ("othersColor", "Others color", "color"),
         ("fill", "Color", "colorfx"),
+        # F04: botón fx (ConstantOrRule) en el panel; la regla llega por fila en objects[i].series.cellColor
+        ("cellColor", "Cell color (fx)", "colorfx"),
         ("opacity", "Opacity %", "num"),
         ("borderColor", "Cell border color", "color"),
         ("borderWidth", "Cell border width", "num"),
@@ -58,6 +64,11 @@ OBJECTS = [
         ("fontSize", "Text size", "num"),
         ("color", "Text color", "color"),
         ("bold", "Bold", "bool"),
+        # FC.CART01: título del eje de las columnas
+        ("showTitle", "Axis title", "bool"),
+        ("titleText", "Title text (empty = automatic)", "text"),
+        ("titleSize", "Title size", "num"),
+        ("titleColor", "Title color", "color"),
     ]),
     ("totals", "Column totals", [
         ("show", "Show the size of each column", "bool"),
@@ -70,6 +81,11 @@ OBJECTS = [
         ("fontSize", "Text size", "num"),
         ("color", "Text color", "color"),
         ("gridlines", "Gridlines", "bool"),
+        # FC.CART01: título del eje de la cuota
+        ("showTitle", "Axis title", "bool"),
+        ("titleText", "Title text (empty = automatic)", "text"),
+        ("titleSize", "Title size", "num"),
+        ("titleColor", "Title color", "color"),
     ]),
     ("focus", "Focus series", [
         ("name", "Focus series (Pro): name of a series", "text"),
@@ -100,6 +116,14 @@ OBJECTS = [
         ("border", "Panel border", "bool"),
         ("borderColor", "Panel border color", "color"),
     ]),
+    ("accessibility", "Accessibility", [
+        ("highContrast", "High contrast", E(("auto", "Enum_hc_auto", "Automatic (Windows setting)"), ("on", "Enum_hc_on", "On"))),
+        ("focusColor", "Keyboard focus color", "color"),
+        ("focusWidth", "Keyboard focus width", "num"),
+        ("minTextSize", "Minimum text size", "num"),
+        ("patterns", "Pattern on Others", "bool"),
+        ("dataPatterns", "Patterns on series (tell them apart without color)", "bool"),
+    ]),
     ("background", "Background", [
         ("color", "Color", "color"),
     ]),
@@ -110,6 +134,7 @@ def ptype(t):
     if t == "num": return {"numeric": True}
     if t == "text": return {"text": True}
     if t in ("color", "colorfx"): return {"fill": {"solid": {"color": True}}}
+    if t == "fmt": return {"formatting": {"formatString": True}}
     return {"enumeration": t}
 
 def main():

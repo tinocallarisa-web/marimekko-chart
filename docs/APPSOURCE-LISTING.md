@@ -1,4 +1,4 @@
-# AppSource Listing — Marimekko & Mekko Chart by TCViz 1.0.0.0
+# AppSource Listing — Marimekko & Mekko Chart by TCViz 1.0.1.0
 
 Copy ready to paste into Partner Center, English only. **Editing this file does not change the offer**: every field
 is pasted by hand in Partner Center.
@@ -81,6 +81,9 @@ GETTING STARTED
 1. Columns: the segments of the market — channel, region, category.
 2. Series: who shares them — company, brand, competitor.
 3. Value: sales, volume or units.
+
+WHAT'S NEW IN 1.0.1
+Dynamic format strings per cell, such as euros in one column and dollars in another. Conditional formatting (fx) of the cell colour. Axis titles on both axes. A new Accessibility card: high contrast on demand, keyboard focus colour and width, a minimum text size, and patterns to tell series apart without colour.
 
 Documentation, how to read a Marimekko chart and FAQ: https://tinocallarisa-web.github.io/marimekko-chart/support.html
 Questions: https://github.com/tinocallarisa-web/marimekko-chart/discussions

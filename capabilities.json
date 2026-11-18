@@ -121,6 +121,21 @@
     }
   ],
   "objects": {
+    "general": {
+      "displayName": "General",
+      "displayNameKey": "Obj_general",
+      "properties": {
+        "formatString": {
+          "displayName": "Format string",
+          "displayNameKey": "Prop_general_formatString",
+          "type": {
+            "formatting": {
+              "formatString": true
+            }
+          }
+        }
+      }
+    },
     "style": {
       "displayName": "Style template",
       "displayNameKey": "Obj_style",
@@ -302,6 +317,17 @@
             }
           }
         },
+        "cellColor": {
+          "displayName": "Cell color (fx)",
+          "displayNameKey": "Prop_series_cellColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
         "opacity": {
           "displayName": "Opacity %",
           "displayNameKey": "Prop_series_opacity",
@@ -435,6 +461,38 @@
           "type": {
             "bool": true
           }
+        },
+        "showTitle": {
+          "displayName": "Axis title",
+          "displayNameKey": "Prop_columnLabels_showTitle",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title text (empty = automatic)",
+          "displayNameKey": "Prop_columnLabels_titleText",
+          "type": {
+            "text": true
+          }
+        },
+        "titleSize": {
+          "displayName": "Title size",
+          "displayNameKey": "Prop_columnLabels_titleSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleColor": {
+          "displayName": "Title color",
+          "displayNameKey": "Prop_columnLabels_titleColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
         }
       }
     },
@@ -510,6 +568,38 @@
           "displayNameKey": "Prop_axis_gridlines",
           "type": {
             "bool": true
+          }
+        },
+        "showTitle": {
+          "displayName": "Axis title",
+          "displayNameKey": "Prop_axis_showTitle",
+          "type": {
+            "bool": true
+          }
+        },
+        "titleText": {
+          "displayName": "Title text (empty = automatic)",
+          "displayNameKey": "Prop_axis_titleText",
+          "type": {
+            "text": true
+          }
+        },
+        "titleSize": {
+          "displayName": "Title size",
+          "displayNameKey": "Prop_axis_titleSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "titleColor": {
+          "displayName": "Title color",
+          "displayNameKey": "Prop_axis_titleColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
           }
         }
       }
@@ -725,6 +815,69 @@
                 "color": true
               }
             }
+          }
+        }
+      }
+    },
+    "accessibility": {
+      "displayName": "Accessibility",
+      "displayNameKey": "Obj_accessibility",
+      "properties": {
+        "highContrast": {
+          "displayName": "High contrast",
+          "displayNameKey": "Prop_accessibility_highContrast",
+          "type": {
+            "enumeration": [
+              {
+                "value": "auto",
+                "displayName": "Automatic (Windows setting)",
+                "displayNameKey": "Enum_hc_auto"
+              },
+              {
+                "value": "on",
+                "displayName": "On",
+                "displayNameKey": "Enum_hc_on"
+              }
+            ]
+          }
+        },
+        "focusColor": {
+          "displayName": "Keyboard focus color",
+          "displayNameKey": "Prop_accessibility_focusColor",
+          "type": {
+            "fill": {
+              "solid": {
+                "color": true
+              }
+            }
+          }
+        },
+        "focusWidth": {
+          "displayName": "Keyboard focus width",
+          "displayNameKey": "Prop_accessibility_focusWidth",
+          "type": {
+            "numeric": true
+          }
+        },
+        "minTextSize": {
+          "displayName": "Minimum text size",
+          "displayNameKey": "Prop_accessibility_minTextSize",
+          "type": {
+            "numeric": true
+          }
+        },
+        "patterns": {
+          "displayName": "Pattern on Others",
+          "displayNameKey": "Prop_accessibility_patterns",
+          "type": {
+            "bool": true
+          }
+        },
+        "dataPatterns": {
+          "displayName": "Patterns on series (tell them apart without color)",
+          "displayNameKey": "Prop_accessibility_dataPatterns",
+          "type": {
+            "bool": true
           }
         }
       }

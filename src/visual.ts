@@ -3,12 +3,14 @@
 import powerbi from "powerbi-visuals-api";
 import "./../style/visual.less";
 import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
+import { dataViewWildcard } from "powerbi-visuals-utils-dataviewutils";
 import {
     HtmlSubSelectableClass, HtmlSubSelectionHelper, SubSelectableDisplayNameAttribute,
     SubSelectableObjectNameAttribute, SubSelectableTypeAttribute,
 } from "powerbi-visuals-utils-onobjectutils";
 import { STRINGS } from "./strings";
 import { LANDING_ICON } from "./landingIcon";
+import { createProWatermark, renderProWatermark } from "./comun/watermark";
 
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
@@ -37,6 +39,8 @@ const NOTIFY_GENERAL = 0;
 const FREE_SERIES = 3;
 const MAX_SERIES = 12;
 const MAX_COLUMNS = 60;
+/** Tramas por serie (D10): rayas a 135°, verticales, horizontales, puntos, aspa y cuadrícula; se repiten pasado el 6. Others: rayas a 45°. */
+const PATTERNS = 6;
 const OTHERS = "\u0000others";
 
 function matchesPlan(sp: string, planId: string): boolean {
@@ -69,6 +73,13 @@ interface Settings {
     smCols: number; smGap: number; smTitleSize: number; smTitleColor: string; smTitleBold: boolean;
     smBackground: string; smBorder: boolean; smBorderColor: string;
     background: string;
+    /** series.cellColor: color fijo de todas las celdas con nombre (vacío = un color por serie); la regla fx llega por fila. */
+    cellColor: string;
+    // Accesibilidad (D10). focus* de arriba es la serie propia; a11y* es el foco del teclado.
+    hcMode: string; a11yFocusColor: string; a11yFocusWidth: number; minText: number; patterns: boolean; dataPatterns: boolean;
+    // Títulos de eje (FC.CART01): el de las columnas va en la tarjeta Column labels; el de la cuota, en Share axis.
+    colTitle: boolean; colTitleText: string; colTitleSize: number; colTitleColor: string;
+    axisTitle: boolean; axisTitleText: string; axisTitleSize: number; axisTitleColor: string;
 }
 
 const DEFAULTS: Settings = {
@@ -85,6 +96,11 @@ const DEFAULTS: Settings = {
     smCols: 0, smGap: 10, smTitleSize: 12, smTitleColor: "#3D3929", smTitleBold: true,
     smBackground: "", smBorder: false, smBorderColor: "#E1DFDD",
     background: "",
+    cellColor: "",
+    // minText 8: el menor tamaño que ya usaba la plantilla Compacta, para no cambiar los informes que existen.
+    hcMode: "auto", a11yFocusColor: "#1F4E80", a11yFocusWidth: 2, minText: 8, patterns: true, dataPatterns: false,
+    colTitle: true, colTitleText: "", colTitleSize: 11, colTitleColor: "#605E5C",
+    axisTitle: true, axisTitleText: "", axisTitleSize: 11, axisTitleColor: "#605E5C",
 };
 
 /**
@@ -142,6 +158,14 @@ function readSettings(objects: Objects): Settings {
         smTitleBold: pick("smallMultiples", "titleBold", "smTitleBold"), smBackground: pick("smallMultiples", "background", "smBackground"),
         smBorder: pick("smallMultiples", "border", "smBorder"), smBorderColor: pick("smallMultiples", "borderColor", "smBorderColor"),
         background: pick("background", "color", "background"),
+        cellColor: pick("series", "cellColor", "cellColor"),
+        hcMode: pick("accessibility", "highContrast", "hcMode"), a11yFocusColor: pick("accessibility", "focusColor", "a11yFocusColor"),
+        a11yFocusWidth: pick("accessibility", "focusWidth", "a11yFocusWidth"), minText: pick("accessibility", "minTextSize", "minText"),
+        patterns: pick("accessibility", "patterns", "patterns"), dataPatterns: pick("accessibility", "dataPatterns", "dataPatterns"),
+        colTitle: pick("columnLabels", "showTitle", "colTitle"), colTitleText: pick("columnLabels", "titleText", "colTitleText"),
+        colTitleSize: pick("columnLabels", "titleSize", "colTitleSize"), colTitleColor: pick("columnLabels", "titleColor", "colTitleColor"),
+        axisTitle: pick("axis", "showTitle", "axisTitle"), axisTitleText: pick("axis", "titleText", "axisTitleText"),
+        axisTitleSize: pick("axis", "titleSize", "axisTitleSize"), axisTitleColor: pick("axis", "titleColor", "axisTitleColor"),
     };
 }
 
@@ -159,6 +183,10 @@ interface Series {
 interface Cell {
     key: string; panel: string | null; col: string; ser: string;
     value: number; cmp: number | null; hl: number | null;
+    /** Color de la regla fx de su fila (null = sin regla). */
+    rule: string | null;
+    /** Cadena de formato dinámica de su fila; null = filas con formatos distintos (Others): se usa el de la medida. */
+    fmt: string | undefined | null;
     ids: ISelectionId[];
     tips: { name: string; value: string }[];
 }
@@ -191,6 +219,8 @@ export class Visual implements IVisual {
     private hasComparison = false;
     private hasHighlights = false;
     private valueFormat: string | undefined;
+    /** Formateadores por cadena de formato: con formato dinámico la cadena cambia fila a fila. */
+    private fmtCache = new Map<string, (v: number) => string>();
     private lastOptions: VisualUpdateOptions | null = null;
     private lastDv: DataView | undefined;
     private hasData = false;
@@ -241,10 +271,7 @@ export class Visual implements IVisual {
         this.noteEl = document.createElement("div");
         this.noteEl.className = "tcmk-note";
         this.root.appendChild(this.noteEl);
-        this.watermarkEl = document.createElement("div");
-        this.watermarkEl.className = "tcmk-watermark";
-        this.watermarkEl.setAttribute("aria-hidden", "true");
-        this.root.appendChild(this.watermarkEl);
+        this.watermarkEl = createProWatermark(this.root);
         this.guideEl = document.createElement("div");
         this.guideEl.className = "tcmk-guide";
         this.root.appendChild(this.guideEl);
@@ -485,6 +512,7 @@ export class Visual implements IVisual {
 
         // 2. Celdas
         const panelSet: string[] = [];
+        const rowFmts = new Set<string>();
         for (let i = 0; i < n; i++) {
             const v = this.num(valCol.values[i]);
             if (v === null) continue;
@@ -495,8 +523,18 @@ export class Visual implements IVisual {
             if (panel !== null && panelSet.indexOf(panel) < 0) panelSet.push(panel);
             const key = (panel ?? "") + "\u0001" + c + "\u0001" + sk;
             let cell = this.cells.get(key);
-            if (!cell) { cell = { key, panel, col: c, ser: sk, value: 0, cmp: null, hl: null, ids: [], tips: [] }; this.cells.set(key, cell); }
+            if (!cell) { cell = { key, panel, col: c, ser: sk, value: 0, cmp: null, hl: null, rule: null, fmt: undefined, ids: [], tips: [] }; this.cells.set(key, cell); }
             cell.value += Math.max(0, v);
+            // F11: formato dinámico de la medida, fila a fila (general.formatString declarado en capabilities)
+            const rf = this.rowFormat(valCol, i);
+            if (cell.fmt === undefined) cell.fmt = rf ?? "";
+            else if (cell.fmt !== null && cell.fmt !== (rf ?? "")) cell.fmt = null;
+            rowFmts.add(rf ?? "");
+            // F04: color de la regla fx (series.cellColor). Others conserva su color: junta series distintas.
+            if (sk !== OTHERS) {
+                const rule = this.ruleOf([valCol, ...cats], i);
+                if (rule) cell.rule = rule;
+            }
             const cv = cmpCol ? this.num(cmpCol.values[i]) : null;
             if (cv !== null) { cell.cmp = (cell.cmp ?? 0) + Math.max(0, cv); this.hasComparison = true; }
             const hv = valCol.highlights ? this.num(valCol.highlights[i]) : null;
@@ -505,7 +543,7 @@ export class Visual implements IVisual {
                 cell.tips = tipCols.map(tc => {
                     const raw = tc.values[i];
                     const nv = this.num(raw);
-                    return { name: tc.source.displayName, value: nv !== null ? this.formatter(this.formatOf(tc))(nv) : (raw === null || raw === undefined ? "" : String(raw)) };
+                    return { name: tc.source.displayName, value: nv !== null ? this.fmt(nv, this.rowFormat(tc, i) ?? this.formatOf(tc)) : (raw === null || raw === undefined ? "" : String(raw)) };
                 });
             }
             let b = this.host.createSelectionIdBuilder().withCategory(colCol, i);
@@ -516,33 +554,80 @@ export class Visual implements IVisual {
             if (!this.idToCell.has(k)) { this.idToCell.set(k, key); cell.ids.push(id); }
         }
         if (panelSet.length) this.panels = panelSet;
+        // Si todas las filas traen la misma cadena dinámica, es el formato de la medida para ejes, totales y frase.
+        if (rowFmts.size === 1) { const only = rowFmts.values().next().value; if (only) this.valueFormat = only; }
         this.columns = colOrder.slice(0, MAX_COLUMNS);
         return this.cells.size > 0 && this.series.length > 0;
     }
 
     private formatOf(col: DataViewValueColumn): string | undefined {
-        // getFormatStringByColumn devuelve también las cadenas de formato dinámicas de la medida.
+        // Cadena estática de la columna; la dinámica llega por fila (rowFormat).
         try { return valueFormatter.getFormatStringByColumn(col.source as any) || col.source.format; } catch { return col.source.format; }
     }
 
-    private formatter(format: string | undefined, value?: number): (v: number) => string {
-        const culture = this.culture;
-        try {
-            const f = valueFormatter.create({ format: format || undefined, value, cultureSelector: culture } as any);
-            const plain = (() => { try { return new Intl.NumberFormat(culture, { maximumFractionDigits: 2 }); } catch { return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }); } })();
-            return (v: number) => {
-                const out = f.format(v);
-                if (Number.isInteger(v) || /%/.test(format || "") || /[.,]\d/.test(out)) return out;
-                return format ? out : plain.format(v);
-            };
-        } catch { return (v: number) => String(Math.round(v * 100) / 100); }
+    /** F11: cadena de formato dinámica de la fila i (values[c].objects[i].general.formatString), si la medida la tiene. */
+    private rowFormat(col: { objects?: powerbi.DataViewObjects[] } | undefined, i: number): string | undefined {
+        const f = (col?.objects?.[i] as any)?.general?.formatString;
+        return typeof f === "string" && f ? f : undefined;
     }
 
-    /** Valores grandes en forma corta (40,2 M) para totales y frases; el formato del modelo en el tooltip. */
-    private shortFmt(v: number): string {
+    /** F04: color de la regla fx de la fila; según el host llega en la columna de valor o en una de categoría. */
+    private ruleOf(cols: { objects?: powerbi.DataViewObjects[] }[], i: number): string | null {
+        for (const c of cols) {
+            const col = (c?.objects?.[i] as any)?.series?.cellColor?.solid?.color;
+            if (typeof col === "string" && col) return col;
+        }
+        return null;
+    }
+
+    /** Formato de una celda: el de su fila, o el de la medida si no tiene (o si junta filas con formatos distintos). */
+    private cellFmt(cell: Cell): string | undefined {
+        return cell.fmt || this.valueFormat;
+    }
+
+    /** Formato común de varias celdas (total de una columna); si difieren, el de la medida. */
+    private commonFmt(cells: Cell[]): string | undefined {
+        let f: string | undefined | null;
+        for (const c of cells) {
+            const x = this.cellFmt(c);
+            if (f === undefined) f = x ?? "";
+            else if (f !== (x ?? "")) return this.valueFormat;
+        }
+        return f || this.valueFormat;
+    }
+
+    private formatter(format: string | undefined): (v: number) => string {
+        return (v: number) => this.fmt(v, format);
+    }
+
+    /** Valor con su cadena de formato; un formateador por cadena, en caché. */
+    private fmt(v: number, format: string | undefined): string {
+        const key = format || "";
+        let f = this.fmtCache.get(key);
+        if (!f) {
+            const culture = this.culture;
+            try {
+                const vf = valueFormatter.create({ format: format || undefined, cultureSelector: culture } as any);
+                const plain = (() => { try { return new Intl.NumberFormat(culture, { maximumFractionDigits: 2 }); } catch { return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }); } })();
+                f = (x: number) => {
+                    const out = vf.format(x);
+                    if (Number.isInteger(x) || /%/.test(format || "") || /[.,]\d/.test(out)) return out;
+                    return format ? out : plain.format(x);
+                };
+            } catch { f = (x: number) => String(Math.round(x * 100) / 100); }
+            if (this.fmtCache.size > 200) this.fmtCache.clear();
+            this.fmtCache.set(key, f);
+        }
+        return f(v);
+    }
+
+    /** Valores grandes en forma corta (40,2 M) para etiquetas, totales y frases, con la cadena de formato dada. */
+    private shortFmt(v: number, format: string | undefined = this.valueFormat): string {
         try {
             // WholeUnits (2): el sistema por defecto pasa a "bn" desde 100 M y escribe 105,8 M como 0,1 bn.
-            const f = valueFormatter.create({ format: this.valueFormat, value: v > 0 ? v : 1, precision: 1, cultureSelector: this.culture, displayUnitSystemType: 2 } as any);
+            // Con un porcentaje no hay unidades que acortar.
+            if (/%/.test(format || "")) return this.fmt(v, format);
+            const f = valueFormatter.create({ format, value: v > 0 ? v : 1, precision: 1, cultureSelector: this.culture, displayUnitSystemType: 2 } as any);
             return f.format(v);
         } catch { return String(Math.round(v)); }
     }
@@ -599,9 +684,60 @@ export class Visual implements IVisual {
         return e;
     }
 
+    /**
+     * Alto contraste: el del sistema (colores del tema de Windows) o forzado desde Accesibilidad (negro sobre blanco,
+     * serie propia en azul oscuro). En los dos, las series se distinguen por tramas además del borde.
+     */
     private hc(): { on: boolean; fg: string; bg: string; sel: string } {
         const p: any = this.host.colorPalette;
-        return { on: !!p?.isHighContrast, fg: p?.foreground?.value || "#000000", bg: p?.background?.value || "#FFFFFF", sel: p?.foregroundSelected?.value || p?.foreground?.value || "#000000" };
+        const sys = !!p?.isHighContrast;
+        if (sys) return { on: true, fg: p?.foreground?.value || "#000000", bg: p?.background?.value || "#FFFFFF", sel: p?.foregroundSelected?.value || p?.foreground?.value || "#000000" };
+        if (this.s.hcMode === "on") return { on: true, fg: "#000000", bg: "#FFFFFF", sel: "#1F4E80" };
+        return { on: false, fg: "#000000", bg: "#FFFFFF", sel: "#000000" };
+    }
+
+    /** Tamaño de texto acotado y nunca por debajo del mínimo de Accesibilidad. */
+    private fsz(v: number, lo: number, hi: number): number {
+        const min = this.minFont;
+        return clamp(v, Math.max(lo, min), Math.max(hi, min));
+    }
+
+    private get minFont(): number { return clamp(this.s.minText, 6, 24); }
+
+    /**
+     * Tramas (D10): "Others" rayado y, si se pide (o en alto contraste), una trama por serie para distinguirlas sin
+     * color. Dos tintas por trama, clara y oscura, para que se vean sobre cualquier color de serie.
+     */
+    private patternDefs(hc: { on: boolean; fg: string }): void {
+        const defs = this.el("defs", {}, this.svg);
+        // kind: 0 rayas 45° (solo Others), 1 rayas 135°, 2 verticales, 3 horizontales, 4 puntos, 5 aspa, 6 cuadrícula
+        const make = (id: string, kind: number, color: string, op: number) => {
+            const attrs: Record<string, string | number> = { id, width: 6, height: 6, patternUnits: "userSpaceOnUse" };
+            if (kind === 0) attrs.patternTransform = "rotate(45)";
+            else if (kind === 1) attrs.patternTransform = "rotate(135)";
+            else if (kind === 3) attrs.patternTransform = "rotate(90)";
+            const p = this.el("pattern", attrs, defs);
+            const ln = (x1: number, y1: number, x2: number, y2: number) =>
+                this.el("line", { x1, y1, x2, y2, stroke: color, "stroke-width": 1.4, "stroke-opacity": op }, p);
+            if (kind === 4) this.el("circle", { cx: 3, cy: 3, r: 1.3, fill: color, "fill-opacity": op }, p);
+            else if (kind === 5) { ln(0, 0, 6, 6); ln(6, 0, 0, 6); }
+            else if (kind === 6) { ln(1, 0, 1, 6); ln(0, 1, 6, 1); }
+            else ln(1, 0, 1, 6);
+        };
+        make("tcmk-stripe", 0, hc.on ? hc.fg : "#605E5C", hc.on ? 1 : 0.45);
+        for (let i = 0; i < PATTERNS; i++) {
+            if (hc.on) make("tcmk-p" + i + "h", i + 1, hc.fg, 1);
+            else { make("tcmk-p" + i + "d", i + 1, "#252423", 0.45); make("tcmk-p" + i + "l", i + 1, "#FFFFFF", 0.65); }
+        }
+    }
+
+    /** Trama de una serie (o null): Others rayado; las demás por su posición si hay tramas o alto contraste. */
+    private patternOf(se: Series, fill: string, s: Settings, hc: { on: boolean; sel: string }): string | null {
+        if (se.others) return s.patterns || hc.on ? "url(#tcmk-stripe)" : null;
+        if (!s.dataPatterns && !hc.on) return null;
+        if (hc.on && fill === hc.sel) return null;
+        const k = this.series.indexOf(se) % PATTERNS;
+        return `url(#tcmk-p${k}${hc.on ? "h" : this.contrast(fill) === "#FFFFFF" ? "l" : "d"})`;
     }
 
     /** Dibuja con el último dataView. Lo usa update() y el repintado tras resolver la licencia. */
@@ -614,7 +750,7 @@ export class Visual implements IVisual {
         this.guideEl.style.display = "none";
         if (!this.hasData) {
             this.clearSvg(); this.noteEl.style.display = "none";
-            this.watermarkEl.style.display = "none";
+            renderProWatermark(this.watermarkEl, null);
             this.landing(vp.width, vp.height);
             this.warnings();
             return;
@@ -649,18 +785,20 @@ export class Visual implements IVisual {
         const hc = this.hc();
         const tiny = W < 220 || H < 160;
         let top = 4, bottom = 4, right = 4;
+        this.patternDefs(hc);
 
         // Frase resumen (Pro: serie propia)
         const focus = this.focusSeries(s);
         if (focus && s.summary && this.panels.length === 1 && !tiny) {
             const lines = this.summaryLines(s, focus);
-            const fs = clamp(s.summaryFont, 8, 28);
+            const fs = this.fsz(s.summaryFont, 8, 28);
             const g = this.el("g", { class: "tcmk-summary" }, this.svg);
             this.subSelectable(g, "focus", this.t("Obj_focus", "Focus series"), powerbi.visuals.SubSelectionStylesType.Text);
+            const fs2 = Math.max(this.minFont, fs - 1);
             lines.forEach((ln, k) => {
-                const t = this.el("text", { x: 6, y: top + fs * (k + 1) + k * 4, "font-size": k ? fs - 1 : fs, "font-weight": k ? 400 : 600,
+                const t = this.el("text", { x: 6, y: top + fs * (k + 1) + k * 4, "font-size": k ? fs2 : fs, "font-weight": k ? 400 : 600,
                     fill: hc.on ? hc.fg : (k ? "#605E5C" : "#252423") }, g);
-                t.textContent = this.fit(ln, k ? fs - 1 : fs, W - 12);
+                t.textContent = this.fit(ln, k ? fs2 : fs, W - 12);
             });
             top += lines.length * (fs + 4) + 6;
         }
@@ -669,7 +807,7 @@ export class Visual implements IVisual {
         if (s.legend && this.series.length > 1 && !tiny) {
             const lg = this.el("g", { class: "tcmk-legend" }, this.svg);
             this.subSelectable(lg, "legend", this.t("Obj_legend", "Legend"), powerbi.visuals.SubSelectionStylesType.Text);
-            const fl = clamp(s.legendFont, 6, 30);
+            const fl = this.fsz(s.legendFont, 6, 30);
             const rowH = fl + 8;
             if (s.legendPos === "right" && W > 380) {
                 const colW = Math.min(170, Math.max(...this.series.map(x => this.textW(x.name, fl))) + fl + 18);
@@ -704,20 +842,48 @@ export class Visual implements IVisual {
             }
         }
 
+        // Títulos de eje, una vez para todos los paneles: abajo el eje horizontal y a la izquierda (girado) el vertical.
+        // Vertical: columnas abajo y cuota a la izquierda; horizontal, al revés. Si el gráfico quedara sin sitio, no se dibujan.
+        let left = 0;
+        {
+            const vertical = s.orientation !== "horizontal";
+            const colT = s.colTitle && s.colLabels ? this.axisTitle("col", s) : null;
+            const shareT = s.axisTitle && s.axis ? this.axisTitle("share", s) : null;
+            const bottomT = vertical ? colT : shareT, leftT = vertical ? shareT : colT;
+            const tg = this.el("g", { class: "tcmk-axis-titles", "aria-hidden": "true" }, this.svg);
+            if (bottomT && H - top - bottom - (bottomT.size + 6) >= 40) {
+                const t = this.el("text", { x: (W - right) / 2, y: H - bottom - 2, "text-anchor": "middle", "font-size": bottomT.size, "font-weight": 600,
+                    fill: hc.on ? hc.fg : bottomT.color }, tg);
+                t.textContent = this.fit(bottomT.text, bottomT.size, W - right - 12);
+                this.subSelectable(t, bottomT.obj, bottomT.label, powerbi.visuals.SubSelectionStylesType.Text);
+                bottom += bottomT.size + 6;
+            }
+            if (leftT && W - right - (leftT.size + 6) >= 60) {
+                const cy = top + (H - top - bottom) / 2;
+                // Girado -90°: la línea base queda a la derecha y las letras suben hacia x = 0; se deja margen al borde.
+                const bx = leftT.size + 3;
+                const t = this.el("text", { x: bx, y: cy, "text-anchor": "middle", "font-size": leftT.size, "font-weight": 600,
+                    transform: `rotate(-90 ${bx} ${cy.toFixed(1)})`, fill: hc.on ? hc.fg : leftT.color }, tg);
+                t.textContent = this.fit(leftT.text, leftT.size, H - top - bottom - 8);
+                this.subSelectable(t, leftT.obj, leftT.label, powerbi.visuals.SubSelectionStylesType.Text);
+                left = leftT.size + 9;
+            }
+        }
+
         // Paneles (múltiplos pequeños con la misma escala)
         const panels = this.panels;
         const gap = panels.length > 1 ? clamp(s.smGap, 0, 60) : 0;
-        const plotW = W - right, plotH = H - top - bottom;
+        const plotW = W - right - left, plotH = H - top - bottom;
         const autoCols = Math.max(1, Math.round(Math.sqrt(panels.length * (plotW / Math.max(1, plotH)))));
         const cols = panels.length === 1 ? 1 : Math.min(panels.length, s.smCols > 0 ? Math.round(s.smCols) : autoCols);
         const rows = Math.ceil(panels.length / cols);
         const cellW = (plotW - gap * (cols - 1)) / cols, cellH = (plotH - gap * (rows - 1)) / rows;
-        const smTitle = clamp(s.smTitleSize, 6, 40);
+        const smTitle = this.fsz(s.smTitleSize, 6, 40);
         // Escala común en modo absoluto: la columna mayor de todos los paneles
         const all = panels.map(p => this.columnsOf(p, s));
         const maxCol = Math.max(1e-9, ...all.map(cs => Math.max(0, ...cs.map(c => c.total))));
         panels.forEach((panel, pi) => {
-            const x0 = (pi % cols) * (cellW + gap), y0 = top + Math.floor(pi / cols) * (cellH + gap);
+            const x0 = left + (pi % cols) * (cellW + gap), y0 = top + Math.floor(pi / cols) * (cellH + gap);
             const g = this.el("g", { transform: `translate(${x0.toFixed(1)},${y0.toFixed(1)})` }, this.svg);
             let titleH = 0;
             if (panel !== null) {
@@ -735,6 +901,22 @@ export class Visual implements IVisual {
     }
 
     /**
+     * Texto, tamaño y color de un título de eje. Vacío = automático: el nombre del campo Columns con lo que mide su
+     * ancho; en la cuota, "Share of column" (o el nombre de la medida, en valores absolutos).
+     */
+    private axisTitle(which: "col" | "share", s: Settings): { text: string; size: number; color: string; obj: string; label: string } | null {
+        const cols = this.lastDv?.metadata?.columns || [];
+        if (which === "col") {
+            const field = cols.find(c => c.roles?.["category"])?.displayName || this.t("Role_category", "Columns (segments)");
+            const text = s.colTitleText.trim() || this.t("UI_ColTitle", "{0} (width = size)").replace("{0}", field);
+            return { text, size: this.fsz(s.colTitleSize, 6, 30), color: s.colTitleColor, obj: "columnLabels", label: this.t("Obj_columnLabels", "Column labels") };
+        }
+        const measure = cols.find(c => c.roles?.["value"])?.displayName || this.t("Role_value", "Value");
+        const text = s.axisTitleText.trim() || (s.mode === "absolute" ? measure : this.t("UI_ShareTitle", "Share of column"));
+        return { text, size: this.fsz(s.axisTitleSize, 6, 30), color: s.axisTitleColor, obj: "axis", label: this.t("Obj_axis", "Share axis") };
+    }
+
+    /**
      * El gráfico de un panel. Vertical: el ancho de cada columna es su parte del total y la altura de cada
      * celda su cuota dentro de la columna (o su valor, en modo absoluto). Horizontal: lo mismo girado.
      * Se reserva primero el área de dibujo y los adornos se quitan por orden si no caben.
@@ -745,7 +927,7 @@ export class Visual implements IVisual {
         const vertical = s.orientation !== "horizontal";
         const absolute = s.mode === "absolute";
         const grand = cols.reduce((t, c) => t + c.total, 0);
-        const fc = clamp(s.colFont, 6, 30), ft = clamp(s.totalsFont, 6, 30), fa = clamp(s.axisFont, 6, 24);
+        const fc = this.fsz(s.colFont, 6, 30), ft = this.fsz(s.totalsFont, 6, 30), fa = this.fsz(s.axisFont, 6, 24);
         const focus = this.focusSeries(s);
         const showTotals = s.totals && !small;
         const showAxis = s.axis && !small;
@@ -798,7 +980,7 @@ export class Visual implements IVisual {
         const colG = this.el("g", { class: "tcmk-collabels" }, g);
         this.subSelectable(colG, "columnLabels", this.t("Obj_columnLabels", "Column labels"), powerbi.visuals.SubSelectionStylesType.Text);
         const totG = this.el("g", { class: "tcmk-totals", "pointer-events": "none" }, g);
-        const fl = clamp(s.labelFont, 6, 24);
+        const fl = this.fsz(s.labelFont, 6, 24);
         const showChange = !!(this.proActive && s.showChange && this.hasComparison);
 
         let pos = 0;
@@ -816,13 +998,17 @@ export class Visual implements IVisual {
                 const y = vertical ? mT + ph - acc - len : mT + pos;
                 const w = vertical ? size : len, h = vertical ? len : size;
                 acc += len;
-                const cg = this.el("g", { "data-pt": cell.key, role: "option", tabindex: "-1", class: "tcmk-cell" }, cellsG);
+                const cg = this.el("g", { "data-pt": cell.key, role: "option", tabindex: "-1", class: "tcmk-pt" }, cellsG);
                 const dim = focus && s.dimOthers && se.key !== focus.key;
-                this.el("rect", { x: x.toFixed(2), y: y.toFixed(2), width: Math.max(0, w).toFixed(2), height: Math.max(0, h).toFixed(2),
-                    fill: hc.on ? (se.key === focus?.key ? hc.sel : hc.bg) : se.color,
+                const fill = hc.on ? (se.key === focus?.key ? hc.sel : hc.bg) : this.cellColor(se, cell, s);
+                const rx = x.toFixed(2), ry = y.toFixed(2), rw = Math.max(0, w).toFixed(2), rh = Math.max(0, h).toFixed(2);
+                this.el("rect", { x: rx, y: ry, width: rw, height: rh, fill, class: "tcmk-hit",
                     "fill-opacity": hc.on ? 1 : clamp(s.opacity, 5, 100) / 100 * (dim ? 0.45 : 1),
                     stroke: hc.on ? hc.fg : (s.borderWidth > 0 ? s.borderColor : "none"), "stroke-width": hc.on ? 1 : clamp(s.borderWidth, 0, 6) }, cg);
-                cg.setAttribute("aria-label", `${c.col}, ${se.name}: ${this.formatter(this.valueFormat)(cell.value)}, ${this.pct(share, 1)}`);
+                // Trama encima del color (D10): Others, series sin color o alto contraste
+                const pat = this.patternOf(se, fill, s, hc);
+                if (pat) this.el("rect", { x: rx, y: ry, width: rw, height: rh, fill: pat, "pointer-events": "none", class: "tcmk-pat" }, cg);
+                cg.setAttribute("aria-label", `${c.col}, ${se.name}: ${this.fmt(cell.value, this.cellFmt(cell))}, ${this.pct(share, 1)}`);
                 this.wire(cg, cell);
 
                 // Etiqueta de la celda, solo si cabe
@@ -830,16 +1016,21 @@ export class Visual implements IVisual {
                     const txt = this.cellLabel(s, se, cell, share, grand);
                     const chg = showChange && cell.cmp !== null && c.cmpTotal ? this.pp(share - cell.cmp / c.cmpTotal) : "";
                     const lines = chg ? 2 : 1;
-                    const needW = Math.max(this.textW(txt, fl), chg ? this.textW(chg, fl - 1) : 0) + 6;
+                    const fl2 = Math.max(this.minFont, fl - 1);
+                    const needW = Math.max(this.textW(txt, fl), chg ? this.textW(chg, fl2) : 0) + 6;
                     if (txt && w >= needW && h >= fl * lines + 4 * lines) {
-                        const col = s.labelColor || (hc.on ? hc.fg : this.contrast(dim ? "#E8E8E8" : se.color));
+                        const col = s.labelColor || (hc.on ? (fill === hc.bg ? hc.fg : this.contrast(fill)) : this.contrast(dim ? "#E8E8E8" : fill));
                         const cy = y + h / 2 - (lines - 1) * (fl / 2);
                         const t = this.el("text", { x: x + w / 2, y: cy + fl * 0.35, "text-anchor": "middle", "font-size": fl, fill: col }, labelsG);
+                        // Sobre una trama, un halo del color de fondo de la celda para que el número se siga leyendo
+                        const halo = pat ? { stroke: hc.on ? (fill === hc.bg ? hc.bg : fill) : fill, "stroke-width": 3, "paint-order": "stroke", "stroke-linejoin": "round" } : null;
+                        if (halo) for (const k in halo) t.setAttribute(k, String((halo as any)[k]));
                         t.textContent = txt;
                         if (chg) {
                             const up = share - cell.cmp / c.cmpTotal >= 0;
-                            const t2 = this.el("text", { x: x + w / 2, y: cy + fl + 1 + fl * 0.35, "text-anchor": "middle", "font-size": fl - 1, "font-weight": 600,
-                                fill: hc.on ? hc.fg : (s.labelColor || this.contrast(se.color) === "#FFFFFF" ? "#FFFFFF" : (up ? s.posColor : s.negColor)) }, labelsG);
+                            const t2 = this.el("text", { x: x + w / 2, y: cy + fl + 1 + fl * 0.35, "text-anchor": "middle", "font-size": fl2, "font-weight": 600,
+                                fill: hc.on ? col : (s.labelColor || this.contrast(fill) === "#FFFFFF" ? "#FFFFFF" : (up ? s.posColor : s.negColor)) }, labelsG);
+                            if (halo) for (const k in halo) t2.setAttribute(k, String((halo as any)[k]));
                             t2.textContent = chg;
                         }
                     }
@@ -862,7 +1053,7 @@ export class Visual implements IVisual {
                 }
             }
             if (showTotals) {
-                const txt = this.shortFmt(c.total) + (s.totalsPct ? " (" + this.pct(c.total / grand) + ")" : "");
+                const txt = this.shortFmt(c.total, this.commonFmt(c.cells)) + (s.totalsPct ? " (" + this.pct(c.total / grand) + ")" : "");
                 const endAt = absolute ? lenTotal : across;
                 if (vertical) {
                     const lab = this.fit(txt, ft, size - 2);
@@ -879,13 +1070,24 @@ export class Visual implements IVisual {
     private cellLabel(s: Settings, se: Series, cell: Cell, share: number, grand: number): string {
         const d = clamp(Math.round(s.labelDecimals), 0, 3);
         switch (s.labelContent) {
-            case "value": return this.shortFmt(cell.value);
+            case "value": return this.shortFmt(cell.value, this.cellFmt(cell));
             // El área de la celda ya es su parte del mercado: aquí se escribe ese número
             case "total": return this.pct(grand ? cell.value / grand : 0, d);
-            case "both": return this.shortFmt(cell.value) + " · " + this.pct(share, d);
+            case "both": return this.shortFmt(cell.value, this.cellFmt(cell)) + " · " + this.pct(share, d);
             case "name": return se.name + " " + this.pct(share, d);
             default: return this.pct(share, d);
         }
+    }
+
+    /**
+     * Color de una celda. Others y la serie propia conservan el suyo; las demás: la regla fx de su fila (F04), si no
+     * el color fijo de "Color de las celdas", y si no el de su serie.
+     */
+    private cellColor(se: Series, cell: Cell, s: Settings): string {
+        if (se.others) return se.color;
+        const focus = this.focusSeries(s);
+        if (focus && focus.key === se.key) return se.color;
+        return cell.rule || s.cellColor || se.color;
     }
 
     /** Texto blanco o casi negro según la luminancia del fondo. */
@@ -902,7 +1104,14 @@ export class Visual implements IVisual {
         // Con serie propia, la muestra va atenuada como sus celdas: si no, una serie del mismo color que el foco se confunde con él.
         const focus = this.focusSeries(s);
         const dim = !!focus && s.dimOthers && se.key !== focus.key;
-        this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill: hc.on ? hc.fg : se.color, "fill-opacity": hc.on || !dim ? 1 : 0.45 }, it);
+        // Muestra como sus celdas: en alto contraste el fondo con borde y su trama, para distinguir las series sin color.
+        const hcf = this.hc();
+        const isFocus = !!focus && focus.key === se.key;
+        const fill = hc.on ? (isFocus ? hcf.sel : hcf.bg) : (se.others || isFocus ? se.color : (s.cellColor || se.color));
+        this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill, "fill-opacity": hc.on || !dim ? 1 : 0.45,
+            stroke: hc.on ? hc.fg : "none", "stroke-width": 1 }, it);
+        const pat = this.patternOf(se, fill, s, hcf);
+        if (pat) this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill: pat, "pointer-events": "none", class: "tcmk-pat" }, it);
         const t = this.el("text", { x: x + fl + 5, y: y + fl * 0.35, "font-size": fl, fill: hc.on ? hc.fg : s.legendColor }, it);
         t.textContent = this.fit(se.name, fl, 170);
         it.addEventListener("click", (e) => {
@@ -964,19 +1173,14 @@ export class Visual implements IVisual {
         return msgs.length > 0;
     }
 
+    /** Marca "Pro preview" común a la cartera (src/comun/watermark.ts): solo editando y sin licencia. */
     private renderWatermark(W: number, H: number): void {
         const wanted = this.isPreview() ? this.attemptedPro() : [];
-        const el = this.watermarkEl;
-        if (!wanted.length) { el.style.display = "none"; return; }
-        while (el.firstChild) el.removeChild(el.firstChild);
-        el.style.display = "flex";
-        const t = document.createElement("div"); t.className = "tcmk-wm-title"; t.textContent = this.t("UI_ProPreview", "Pro preview");
-        // Dos funciones y un contador: con cuatro se salía del gráfico (lección de Pareto 1.6)
-        const names = wanted.map(x => x.label);
-        const w = document.createElement("div"); w.className = "tcmk-wm-why";
-        w.textContent = names.slice(0, 2).join(" · ") + (names.length > 2 ? " +" + (names.length - 2) : "");
-        el.appendChild(t); el.appendChild(w);
-        el.style.fontSize = Math.max(14, Math.min(44, Math.min(W, H) / 7)) + "px";
+        const hc = this.hc();
+        renderProWatermark(this.watermarkEl, wanted.length ? {
+            width: W, height: H, title: this.t("UI_ProPreview", "Pro preview"), features: wanted.map(x => x.label),
+            highContrast: hc.on ? { foreground: hc.fg, background: hc.bg } : null,
+        } : null);
     }
 
     /** Icono de aviso de la cabecera: filas que Power BI no ha entregado. */
@@ -1219,12 +1423,12 @@ export class Visual implements IVisual {
         const se = this.series.find(z => z.key === cell.ser);
         const s = this.effective();
         const col = this.columnsOf(cell.panel, s).find(c => c.col === cell.col);
-        const f = this.formatter(this.valueFormat);
+        const f = this.formatter(this.cellFmt(cell));
         const grand = this.columnsOf(cell.panel, s).reduce((t, c) => t + c.total, 0);
         const items: powerbi.extensibility.VisualTooltipDataItem[] = [];
         if (cell.panel !== null) items.push({ displayName: this.t("UI_Panel", "Panel"), value: cell.panel });
         items.push({ displayName: this.lastDv?.metadata?.columns?.find(c => c.roles?.["category"])?.displayName || this.t("Role_category", "Columns"), value: cell.col });
-        if (se) items.push({ displayName: this.lastDv?.metadata?.columns?.find(c => c.roles?.["series"])?.displayName || this.t("Role_series", "Series"), value: se.name, color: se.color } as any);
+        if (se) items.push({ displayName: this.lastDv?.metadata?.columns?.find(c => c.roles?.["series"])?.displayName || this.t("Role_series", "Series"), value: se.name, color: this.cellColor(se, cell, s) } as any);
         items.push({ displayName: this.lastDv?.metadata?.columns?.find(c => c.roles?.["value"])?.displayName || this.t("Role_value", "Value"), value: f(cell.value) });
         if (col) {
             items.push({ displayName: this.t("UI_ShareOfColumn", "Share of {0}").replace("{0}", cell.col), value: this.pct(cell.value / col.total, 1) });
@@ -1244,6 +1448,10 @@ export class Visual implements IVisual {
     }
 
     private paintSelection(): void {
+        // Foco del teclado (D10): color y grosor de Accesibilidad; en alto contraste, el color de selección del tema.
+        const sysHc = !!(this.host.colorPalette as any)?.isHighContrast;
+        this.root.style.setProperty("--tcmk-focus", sysHc ? this.hc().sel : (this.s.a11yFocusColor || "#1F4E80"));
+        this.root.style.setProperty("--tcmk-focus-w", clamp(this.s.a11yFocusWidth, 1, 6) + "px");
         const elegidos = this.selectedCells();
         const has = elegidos.size > 0;
         const seriesOn = new Set<string>();
@@ -1560,7 +1768,18 @@ export class Visual implements IVisual {
             return { uid: `${obj}_${prop}`, displayName: name(obj, prop, fb),
                 control: { type: powerbi.visuals.FormattingComponent.Dropdown, properties: { descriptor: d(obj, prop), value: list.find(x => x.value === v) ?? list[0], items: list } as any } };
         };
-        const card = (obj: string, fb: string, slices: any[]) => ({ uid: `${obj}_card`, displayName: T(`Obj_${obj}`, fb), groups: [{ uid: `${obj}_g`, displayName: "", slices }] });
+        // revertToDefaultDescriptors: "Restablecer valores predeterminados" de cada tarjeta borra también los colores por serie.
+        const card = (obj: string, fb: string, slices: any[]) => ({
+            uid: `${obj}_card`, displayName: T(`Obj_${obj}`, fb), groups: [{ uid: `${obj}_g`, displayName: "", slices }],
+            revertToDefaultDescriptors: slices.map(sl => sl.control.properties.descriptor),
+        });
+        // fx (F04) en el color de las celdas: la regla se evalúa por fila (selector comodín) y pinta cada celda.
+        // altConstantValueSelector null: el color FIJO se guarda a nivel general; sin él llegaría fila a fila y el
+        // panel no lo recordaría (lección de Bar Chart 1.11).
+        const cellFill = col("series", "cellColor", "Cell color (fx)", s.cellColor);
+        (cellFill.control.properties as any).descriptor = { ...d("series", "cellColor"), instanceKind: powerbi.VisualEnumerationInstanceKinds.ConstantOrRule,
+            selector: dataViewWildcard.createDataViewWildcardSelector(dataViewWildcard.DataViewWildcardMatchingOption.InstancesAndTotals),
+            altConstantValueSelector: null };
         // Un color por serie con nombre, guardado con el selector de su fila.
         const seriesColors = this.series.filter(x => x.selector && !x.others).map((se, k) => ({
             uid: `series_fill_${k}`, displayName: se.name || T("Prop_series_fill", "Color"),
@@ -1585,6 +1804,7 @@ export class Visual implements IVisual {
             ]),
             card("series", "Series", [
                 ...seriesColors,
+                cellFill,
                 num("series", "named", "Named series (Free 3, Pro 12)", s.named),
                 txt("series", "othersLabel", "Others label", s.othersLabel),
                 col("series", "othersColor", "Others color", s.othersColor),
@@ -1605,6 +1825,10 @@ export class Visual implements IVisual {
                 num("columnLabels", "fontSize", "Text size", s.colFont),
                 col("columnLabels", "color", "Text color", s.colColor),
                 tog("columnLabels", "bold", "Bold", s.colBold),
+                tog("columnLabels", "showTitle", "Axis title", s.colTitle),
+                txt("columnLabels", "titleText", "Title text (empty = automatic)", s.colTitleText),
+                num("columnLabels", "titleSize", "Title size", s.colTitleSize),
+                col("columnLabels", "titleColor", "Title color", s.colTitleColor),
             ]),
             card("totals", "Column totals", [
                 tog("totals", "show", "Show the size of each column", s.totals),
@@ -1617,6 +1841,10 @@ export class Visual implements IVisual {
                 num("axis", "fontSize", "Text size", s.axisFont),
                 col("axis", "color", "Text color", s.axisColor),
                 tog("axis", "gridlines", "Gridlines", s.gridlines),
+                tog("axis", "showTitle", "Axis title", s.axisTitle),
+                txt("axis", "titleText", "Title text (empty = automatic)", s.axisTitleText),
+                num("axis", "titleSize", "Title size", s.axisTitleSize),
+                col("axis", "titleColor", "Title color", s.axisTitleColor),
             ]),
             card("focus", "Focus series", [
                 txt("focus", "name", "Focus series (Pro): name of a series", s.focus),
@@ -1646,6 +1874,14 @@ export class Visual implements IVisual {
                 col("smallMultiples", "background", "Panel background", s.smBackground),
                 tog("smallMultiples", "border", "Panel border", s.smBorder),
                 col("smallMultiples", "borderColor", "Panel border color", s.smBorderColor),
+            ]),
+            card("accessibility", "Accessibility", [
+                dd("accessibility", "highContrast", "High contrast", s.hcMode, [["auto", "Enum_hc_auto", "Automatic (Windows setting)"], ["on", "Enum_hc_on", "On"]]),
+                col("accessibility", "focusColor", "Keyboard focus color", s.a11yFocusColor),
+                num("accessibility", "focusWidth", "Keyboard focus width", s.a11yFocusWidth),
+                num("accessibility", "minTextSize", "Minimum text size", s.minText),
+                tog("accessibility", "patterns", "Pattern on Others", s.patterns),
+                tog("accessibility", "dataPatterns", "Patterns on series (tell them apart without color)", s.dataPatterns),
             ]),
             card("background", "Background", [
                 col("background", "color", "Color", s.background),

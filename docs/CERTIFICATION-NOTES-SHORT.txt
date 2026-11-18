@@ -1,14 +1,13 @@
-Marimekko & Mekko Chart by TCViz 1.0.0.0 - GUID marimekkoTCViz8C3F347D9AB541A7A0341C8BA94021AE
+Marimekko & Mekko Chart by TCViz 1.0.1.0 - GUID marimekkoTCViz8C3F347D9AB541A7A0341C8BA94021AE
 
 SOURCE CODE
 github.com/tinocallarisa-web/marimekko-chart, branch "certification". Public, no credentials.
 
 TESTING THE PREMIUM FEATURES - NO KEY NEEDED
 Pro is granted by the AppSource plan through IVisualLicenseManager; no activation key exists.
-Import this .pbiviz and open a report in EDIT mode without a licence: each Pro capability is
-drawn WORKING under a "Pro preview" watermark that names it, and Power BI shows its licence
-notice. Reading view shows the free result. Without licence information (Desktop not
-signed in) Pro stays off, no watermark.
+In EDIT mode without a licence each Pro capability is drawn WORKING under a "Pro preview"
+watermark that names it, and Power BI shows its licence notice. Reading view shows the
+free result. Without licence information (Desktop not signed in) Pro stays off.
 
 WHAT TO CHECK
 1. Empty visual: start screen; resize it (three layouts).
@@ -16,30 +15,31 @@ WHAT TO CHECK
 It opens with Focus series = Iberia Drinks (Pro): in edit mode the watermark shows;
 clear it for the free result, 3 named series plus Others.
 3. More Pro: Small multiples = Year; Layout > Horizontal; Focus series = Begudes Nord.
-4. Click a cell: other visuals filter by that column and series (every identity of the cell;
-Others carries all its series). Click a column label or a legend item to select the whole
-column or series. Click again to clear; Ctrl+click adds. Bookmarks restore it.
+4. Click a cell: other visuals filter by its column and series (every identity; Others
+carries all its series). A column label or legend item selects the whole column or
+series. Click again to clear; Ctrl+click adds. Bookmarks restore it.
 5. Keyboard: arrows move between cells, Enter selects, Esc clears. High contrast.
 6. Format mode: click a cell, a column label, the axis, the legend or the background.
+7. New in 1.0.1: Format > Accessibility (high contrast, focus, minimum text, patterns);
+Cell color fx (rule per cell); axis titles; dynamic format strings per cell.
 
 SETUP GUIDE
-While editing, a small panel lists optional fields and templates. Its buttons save
-style.guide or style.template with persistProperties on a user click, never on selection.
+While editing, a panel lists optional fields and templates. Its buttons save style.guide
+or style.template with persistProperties on a user click, never on selection.
 
-LINKS ON THE START SCREEN
-Guide, Product page and Video open only on click or Enter, through host.launchUrl.
+START SCREEN LINKS
+Open only on click or Enter, through host.launchUrl.
 
 ROWS
-Categorical mapping, window of 30,000. Service: fetchMoreData, up to 20 segments;
-Desktop: first window. A warning icon says when rows were
-left out. Up to 60 columns are drawn; a note says so when there are more.
+Window of 30,000. Service: fetchMoreData, up to 20 segments; Desktop: first window.
+A warning icon says when rows were left out. Up to 60 columns; a note says so.
 
 PRIVACY
 privileges []. No network, no telemetry, no browser storage. src uses no innerHTML; the
 bundle's d3-selection html() comes with onobjectutils and is never called. 12 languages.
 
-Rendering events: one started/finished pair per update(); the licence repaint does not call
-update(). eslint (powerbi-visuals plugin) 0 errors.
+Rendering events: one started/finished pair per update(); the licence repaint does not
+call update(). eslint (powerbi-visuals plugin) 0 errors.
 
 Video https://www.youtube.com/watch?v=s9qSTA-dvJw
 Support/privacy/terms: tinocallarisa-web.github.io/marimekko-chart/

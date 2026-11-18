@@ -1,5 +1,13 @@
 # Changelog — Marimekko & Mekko Chart by TCViz
 
+## 1.0.1.0 — November 2026
+- Dynamic format strings per cell: labels, tooltip and screen-reader description use the format of each cell (for example euros in one column and dollars in another); column totals use the format their cells share.
+- Conditional formatting (fx) of the cell colour: Format → Series → Cell color takes a fixed colour or a rule (gradient, rules or field value) evaluated for each cell.
+- New Accessibility card: high contrast automatic or on, keyboard focus colour and width, minimum text size, pattern on Others and patterns on every series to tell them apart without colour; in high contrast each series gets its own pattern.
+- Axis titles: the columns axis says what the width measures ("Channel (width = size)") and the share axis "Share of column" (the measure name with absolute values); your own text, size and colour in Column labels and Share axis. They follow the minimum text size and high contrast, and fit small visuals.
+- Reset to default on every format card also clears the colours per series.
+- The "Pro preview" watermark is the one common to every TCViz visual: easier to read over the chart.
+
 ## 1.0.0.0 — November 2026
 - First release: Marimekko columns at 100% where the width is the size of each segment and the height its share.
 - Free: 3 named series plus Others (which keeps every column at its real 100%), share labels, column totals with their % of the total, share axis, legend, ordering by size or data order.

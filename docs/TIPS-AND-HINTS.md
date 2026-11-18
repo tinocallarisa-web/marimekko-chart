@@ -1,4 +1,4 @@
-# Marimekko & Mekko Chart by TCViz — Tips & Hints (1.0.0.0)
+# Marimekko & Mekko Chart by TCViz — Tips & Hints (1.0.1.0)
 
 A Marimekko (Mekko) chart for market structure: the width of each column is the size of the segment, the stack is
 who shares it. One chart answers "where are we strong in a big market?". This page is the short version of
@@ -39,11 +39,15 @@ Column widths are shares of what is in the chart, so they always add up to 100% 
   guide can be turned back on here.
 - Layout — columns (vertical) or bars (horizontal, Pro); 100% (share) or absolute values (bar Mekko, Pro); space
   between columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order.
-- Series — one colour per named series, number of named series, Others label and colour, opacity, cell borders.
+- Series — one colour per named series; Cell color with conditional formatting (fx): a fixed colour or a rule
+  per cell; number of named series, Others label and colour, opacity, cell borders.
 - Cell labels — share of the column or series name and share; % of the total, value, or value and share (Pro);
   decimals. A label is hidden when it does not fit its cell.
-- Column labels, Column totals (size and % of the total), Share axis with gridlines, Legend (top, bottom, right),
-  Small multiples (columns, spacing, titles, panel background and border), Background.
+- Column labels and Share axis, each with its axis title (automatic or your own text, size, colour); Column totals
+  (size and % of the total); gridlines; Legend (top, bottom, right); Small multiples (columns, spacing, titles, panel
+  background and border); Background.
+- Accessibility — high contrast automatic or on, keyboard focus colour and width, minimum text size, pattern on
+  Others and patterns on every series to tell them apart without colour.
 
 ## Pro
 
@@ -65,6 +69,8 @@ Column widths are shares of what is in the chart, so they always add up to 100% 
 
 ## Good to know
 
+- Dynamic format strings work per cell: a column in euros and another in dollars keep their own format in labels,
+  tooltip and totals.
 - Write the focus series exactly as it appears in the data; a note says so if no series has that name.
 - Narrow columns hide their labels and shorten their names; the full name is in the tooltip.
 - In Power BI Desktop the visual uses the rows Power BI sends at once; a warning icon says so when the data is cut.

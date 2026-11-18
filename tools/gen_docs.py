@@ -14,7 +14,7 @@ NAME = "Marimekko & Mekko Chart by TCViz"
 BASE = "https://tinocallarisa-web.github.io/marimekko-chart/"
 REPO = "https://github.com/tinocallarisa-web/marimekko-chart"
 VERSION = json.load(io.open(os.path.join(ROOT, "pbiviz.json"), encoding="utf-8"))["visual"]["version"]
-FECHA = "2 November 2026"
+FECHA = "18 November 2026"
 VIDEO = "https://www.youtube.com/watch?v=s9qSTA-dvJw"
 
 plantilla = io.open(os.path.join(WC, "privacy.html"), encoding="utf-8").read()
@@ -77,7 +77,10 @@ FREE_PRO = [
     ("6 style templates, including IBCS style; setup guide inside the visual", "✓", "✓"),
     ("Tooltip with both readings: share of the column and % of the total", "✓", "✓"),
     ("Cross-filtering, highlight, bookmarks, drilldown, context menu, keyboard, high contrast", "✓", "✓"),
-    ("Number format of the measure, dynamic format strings included; format on the canvas; 12 languages", "✓", "✓"),
+    ("Conditional formatting (fx) of the cell colour: a rule colours each cell", "✓", "✓"),
+    ("Axis titles on the columns axis and the share axis, automatic or your own text", "✓", "✓"),
+    ("Accessibility card: high contrast on demand, keyboard focus colour and width, minimum text size, patterns on Others and on every series", "✓", "✓"),
+    ("Number format of the measure, dynamic format strings included (per cell); format on the canvas; 12 languages", "✓", "✓"),
     ("4 to 12 named series", "—", "✓"),
     ("Focus series: your company highlighted, the others dimmed, and a summary sentence (share, strongest and weakest segment)", "—", "✓"),
     ("Order columns by the share of the focus series", "—", "✓"),
@@ -90,15 +93,16 @@ FREE_PRO = [
 FORMAT = [
     ("Style template", "Clean, Classic, Minimal, Contrast, Compact, IBCS style. A template only fills what you have not set yourself. Setup guide: turn it back on to see the guide again."),
     ("Layout", "Columns (vertical) or bars (horizontal, Pro); values as 100% shares or absolute (bar Mekko, Pro); space between columns; order columns by data order, size or share of the focus series (Pro); order series by size or data order."),
-    ("Series", "One colour per named series; number of named series (Free 3, Pro 12); Others label and colour; opacity; cell border colour and width."),
+    ("Series", "One colour per named series; cell colour with conditional formatting (fx): a fixed colour for every cell, or a rule (gradient, rules or field value) that colours each cell; number of named series (Free 3, Pro 12); Others label and colour; opacity; cell border colour and width."),
     ("Cell labels", "Show; share of the column or series name and share; % of the total, value, or value and share (Pro); text size; text colour (empty = automatic, white or dark depending on the cell); decimals of the share."),
-    ("Column labels", "Show; text size and colour; bold. Long names are shortened to fit; the full name is in the tooltip."),
+    ("Column labels", "Show; text size and colour; bold. Long names are shortened to fit; the full name is in the tooltip. Axis title: show; text (empty = automatic: the name of the Columns field and \"width = size\"); title size and colour."),
     ("Column totals", "Show the size of each column; also its % of the total; text size and colour."),
-    ("Share axis", "Show; text size and colour; gridlines."),
+    ("Share axis", "Show; text size and colour; gridlines. Axis title: show; text (empty = automatic: \"Share of column\", or the name of the measure with absolute values); title size and colour."),
     ("Focus series", "Name of a series (Pro), exactly as in the data; focus colour; dim the other series; summary sentence and its text size."),
     ("Comparison", "Show the change in share (Pro); gain and loss colours; change in the summary sentence."),
     ("Legend", "Show; position top, bottom or right; text size and colour."),
     ("Small multiples", "Columns (0 = automatic); space between panels; title size, colour and bold; panel background and border."),
+    ("Accessibility", "High contrast: automatic (Windows setting) or on; keyboard focus colour and width; minimum text size for every text in the chart; pattern on Others; patterns on series, to tell them apart without colour."),
     ("Background", "Colour of the whole visual."),
 ]
 
@@ -138,8 +142,15 @@ FAQ = [
      "<p>On the visual's Microsoft AppSource page, choose <strong>Buy now</strong> (not Install free). Licences are per user and managed by "
      "Microsoft; restart Power BI Desktop after the licence is assigned. See <a href=\"https://tcviz.com/licensing.html\">tcviz.com/licensing</a>.</p>"),
     ("How are numbers formatted?",
-     "<p>With the number format of the measure from the model, <strong>dynamic format strings</strong> included, in the report's language; "
-     "sizes in totals and in the sentence are shortened (40.2 M).</p>"),
+     "<p>With the number format of the measure from the model, <strong>dynamic format strings</strong> included, in the report's language. "
+     "With a dynamic format string each cell keeps its own format in its label, tooltip and screen-reader description (for example euros in one "
+     "column and dollars in another); a column total uses the format its cells share, and the sentence and the axis use it when every cell shares "
+     "one. Sizes in labels, totals and the sentence are shortened (40.2 M).</p>"),
+    ("How do I colour cells with a rule?",
+     "<p>In <strong>Format → Series → Cell color</strong>, click the <strong>fx</strong> button (conditional formatting) and choose a gradient, "
+     "rules or a field value. The rule is evaluated for each cell (column × series) and colours it; the legend keeps the colour of each series. "
+     "Others and the focus series keep their own colour. A fixed colour there paints every named series alike; use it with "
+     "<strong>Accessibility → Patterns on series</strong> to tell them apart. <strong>Reset to default</strong> on the card clears it.</p>"),
     ("Is my data sent anywhere?",
      "<p>No. The visual makes no network requests and stores nothing outside your report. The links on the start screen open only when you click "
      "them, through Power BI.</p>"),
@@ -240,7 +251,9 @@ Reading view shows the free result. Pro is sold per user on Microsoft AppSource.
 <ul>
 <li>Keyboard: Tab into the visual, arrows move between cells, Home/End jump to the first/last, Enter or Space selects, Esc clears, the context-menu key opens the menu. The tooltip opens on the focused cell.</li>
 <li>Each cell has a description for screen readers with its column, series, value and share; the chart describes its columns and series.</li>
-<li>High contrast: the visual uses the colours of the Windows contrast theme, with every cell outlined; the focus series is drawn in the selection colour.</li>
+<li>High contrast: the visual uses the colours of the Windows contrast theme, with every cell outlined and a different pattern on each series, so they are told apart without colour; the focus series is drawn in the selection colour. <strong>Format → Accessibility → High contrast → On</strong> gives the same black-and-white drawing without changing Windows.</li>
+<li>Patterns: Others is striped by default; turn on <strong>Patterns on series</strong> to give every series its own pattern (lines, dots, cross-hatch) in the cells and in the legend. Labels on a pattern keep a halo of the cell colour.</li>
+<li>Keyboard focus colour and width, and a minimum text size for every text of the chart, in <strong>Format → Accessibility</strong>.</li>
 <li>The layout adapts to the size of the visual: labels are hidden when they do not fit, names are shortened, totals and axis are dropped in small panels, and the start screen has three layouts.</li>
 </ul>
 </div>
