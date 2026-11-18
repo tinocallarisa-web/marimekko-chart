@@ -1028,7 +1028,7 @@ export class Visual implements IVisual {
         this.patternDefs(hc);
         const vertical = s.orientation !== "horizontal";
 
-        // ── Presupuesto de alto (D06). El gráfico (celdas, nombres de columna y eje) conserva al menos el 55 % del alto.
+        // ── Presupuesto de alto (D06). Las celdas del gráfico conservan al menos el 55 % del alto.
         // Cuando falta, los adornos ceden en este orden: la frase pasa a una línea con elipsis (completa en su title),
         // la leyenda se compacta en una fila con "+N" (la serie propia primero; los nombres que faltan, en el title del
         // "+N"), se ocultan los títulos de eje, después los totales (el ancho de la columna ya dice su tamaño) y por
