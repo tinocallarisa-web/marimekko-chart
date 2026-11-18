@@ -221,7 +221,10 @@ async def run_pro(b):
         elif name == "06b_titulos_absoluto": ok = "Net sales" in txt and "Channel (width = size)" in txt
         elif name == "06c_titulos_horizontal": ok = any(x["t"] == "Share of column" and not x["rot"] for x in tt) and any(x["t"].startswith("Channel") and x["rot"] for x in tt)
         elif name == "06d_titulos_texto_min_hc": ok = set(txt) == {"Sales channel", "Brand share"} and min(x["fs"] for x in tt) >= 12 and all(x["fill"] == "#000000" for x in tt)
-        else: ok = len(tt) >= 1
+        else:
+            # D06 (1.0.1.0): a 300x170 los títulos ceden antes que las celdas; las celdas conservan el 55 % del alto.
+            cells_h = await pg.evaluate("() => document.querySelector('.tcmk-cells').getBoundingClientRect().height")
+            ok = (len(tt) >= 1 if name != "06e_titulos_tamano_s" else True) and cells_h >= 0.53 * h
         check(f"FC.CART01 {name}: dentro del visual y sin pisar el gráfico", ok and inside and no_overlap and not errs, f"{[(x['t'], x['fs']) for x in tt]} ok={ok} dentro={inside} sin_pisar={no_overlap} low={low:.0f} lm={lm:.0f} {[ (round(x['r']['left']), round(x['r']['top']), round(x['r']['right']), round(x['r']['bottom'])) for x in tt]} {errs[:1]}")
         await pg.close()
 
@@ -382,10 +385,23 @@ async def run_ficha(b):
     await shot("central", 820, 320, FOCUS, cmp=True)
     # Función Pro: small multiples por zona, a la misma escala
     await shot("sm", 980, 580, dict(FOCUS, smallMultiples={"columns": 2}), zones=["BCN Ciutat", "Girona", "Baix Llobregat", "Vallès"], panel=True)
-    # Tres tamaños (D06): el mismo visual, misma configuración. Con la de la versión gratuita: con foco y frase, a
-    # 300x170 la frase y la leyenda de seis series dejan el gráfico en una franja (no se ocultan al encoger).
+    # Tres tamaños (D06): el mismo visual, misma configuración, Pro completo (frase, seis series y cambio de cuota).
+    # Desde 1.0.1.0 los adornos ceden por orden al encoger y las celdas conservan el 55 % del alto: a 300x170 la frase
+    # queda en una línea y la leyenda en una fila con "+N", con Begudes Nord primero.
     for nm, (w, h) in (("l", (900, 520)), ("m", (480, 300)), ("s", (300, 170))):
-        await shot("size_" + nm, w, h, {"series": {"named": 3}})
+        await shot("size_" + nm, w, h, FOCUS, cmp=True)
+        if nm == "s":
+            pg, errs = await page(b, w, h, THEME)
+            await update(pg, bn_dataview(objects=dict(FOCUS, style={"guide": False}), cmp=True), w, h)
+            m = await pg.evaluate("""() => ({ cells: document.querySelector('.tcmk-cells').getBoundingClientRect().height,
+                sum: document.querySelectorAll('.tcmk-summary text').length, sumTitle: document.querySelector('.tcmk-summary title')?.textContent || '',
+                first: document.querySelector('.tcmk-legend g[data-series] text')?.textContent || '',
+                more: document.querySelector('.tcmk-legend-more title')?.textContent || '' })""")
+            check("D06 300x170 con frase y seis series: celdas >= 55 % del alto, frase en una línea con el texto completo en el title, "
+                  "leyenda en una fila con la serie propia primero y +N con los nombres",
+                  m["cells"] >= 0.53 * h and m["sum"] == 1 and m["sumTitle"].startswith("Begudes Nord holds") and m["first"].startswith("Begudes")
+                  and m["more"].count(",") >= 1, str(m))
+            await pg.close()
     # Estilos de la colección (todos gratis): con lo que dibuja la versión gratuita
     for st in ("boardroom", "ledger", "editorial", "signal", "aurora", "terrace"):
         await shot("style_" + st, 900, 520, {"style": {"template": st}, "series": {"named": 3}})

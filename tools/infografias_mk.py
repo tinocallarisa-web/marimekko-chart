@@ -149,7 +149,7 @@ for k, (w, h) in W.items():
     got = Image.open(os.path.join(CAP, f"ficha_size_{k}.png")).size
     assert got == (2 * w, 2 * h), f"ficha_size_{k}.png mide {got}, se esperaba {(2 * w, 2 * h)}"
 sz = lambda k: f'style="width:{W[k][0] * 0.82:.0f}px;height:{W[k][1] * 0.82:.0f}px"'   # misma escala para los tres
-h3 = pagina("marimekko-shot-3", cabecera("Readable at any size", "The same visual and the same settings in a large, medium and small slot, all shown at the same scale.") + f"""
+h3 = pagina("marimekko-shot-3", cabecera("Readable at any size", "The same visual and settings (Pro: focus series, summary sentence, six series) in three slots at the same scale. As it shrinks, the sentence and legend fold to one line and the cells keep most of the height.") + f"""
 <div class="tres"><div class="card l"><b>Large · 900 × 520 px</b><img src="{cap('size_l')}" {sz('l')}></div>
 <div class="card"><b>Medium · 480 × 300 px</b><img src="{cap('size_m')}" {sz('m')}></div>
 <div class="card"><b>Small · 300 × 170 px</b><img src="{cap('size_s')}" {sz('s')}></div></div>""" + PIE, UNA)

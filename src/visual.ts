@@ -202,6 +202,77 @@ function readSettings(objects: Objects): Settings {
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Number.isFinite(v) ? v : lo));
 
+// ─── Color: contraste y distancia (los mismos que el Treemap) ──────────────────
+
+function hexToRgb(hex: string): [number, number, number] | null {
+    const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec((hex || "").trim());
+    if (!m) return null;
+    let h = m[1];
+    if (h.length === 3) h = h.split("").map(c => c + c).join("");
+    return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+    return "#" + [r, g, b].map(v => Math.round(clamp(v, 0, 255)).toString(16).padStart(2, "0")).join("");
+}
+function lerpColor(a: string, b: string, t: number): string {
+    const x = hexToRgb(a), y = hexToRgb(b);
+    if (!x || !y) return t < 0.5 ? a : b;
+    return rgbToHex(x[0] + (y[0] - x[0]) * t, x[1] + (y[1] - x[1]) * t, x[2] + (y[2] - x[2]) * t);
+}
+/** Luminancia relativa WCAG. */
+function luminance(hex: string): number {
+    const c = hexToRgb(hex);
+    if (!c) return 1;
+    const f = (v: number) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); };
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+}
+function contrastRatio(a: string, b: string): number {
+    const la = luminance(a), lb = luminance(b);
+    return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+/**
+ * El mismo tono, aclarado u oscurecido lo justo para leerse sobre el fondo (contraste ≥ 3,5): el verde sigue siendo
+ * verde sobre una celda oscura o clara. El signo (+/−) dice el sentido aunque no se distinga el color.
+ */
+function legibleTone(color: string, bg: string): string {
+    if (contrastRatio(color, bg) >= 3.5) return color;
+    const toward = contrastRatio("#FFFFFF", bg) >= contrastRatio("#000000", bg) ? "#FFFFFF" : "#000000";
+    for (let k = 0.15; k <= 1; k += 0.15) {
+        const c = lerpColor(color, toward, k);
+        if (contrastRatio(c, bg) >= 3.5) return c;
+    }
+    return toward;
+}
+/** El que más contrasta sobre el fondo: blanco o casi negro. */
+function autoInk(bg: string): string {
+    return contrastRatio("#FFFFFF", bg) >= contrastRatio("#252423", bg) ? "#FFFFFF" : "#252423";
+}
+/**
+ * Tinta legible sobre un fondo. El color elegido se respeta allí donde se lee (contraste ≥ 4,5); con el contraste
+ * automático activo, solo donde no se leería pasa a blanco o negro. Sin contraste automático, el elegido manda siempre.
+ */
+function readableInk(chosen: string, bg: string, auto: boolean): string {
+    if (!bg) return chosen || "#252423";
+    if (!chosen) return auto ? autoInk(bg) : "#252423";
+    if (!auto || contrastRatio(chosen, bg) >= 4.5) return chosen;
+    const alt = autoInk(bg);
+    return contrastRatio(alt, bg) > contrastRatio(chosen, bg) ? alt : chosen;
+}
+/** Distancia perceptual aproximada entre dos colores (ΔE76 en CIELAB): < 20, se confunden de un vistazo. */
+function colorDistance(a: string, b: string): number {
+    const lab = (hex: string): [number, number, number] => {
+        const c = hexToRgb(hex) || [0, 0, 0];
+        const [r, g, bl] = c.map(v => { const s = v / 255; return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4); });
+        const x = (r * 0.4124 + g * 0.3576 + bl * 0.1805) / 0.95047, y = r * 0.2126 + g * 0.7152 + bl * 0.0722, z = (r * 0.0193 + g * 0.1192 + bl * 0.9505) / 1.08883;
+        const f = (t: number) => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+        return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
+    };
+    const p = lab(a), q = lab(b);
+    return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+}
+/** Opacidad de las series atenuadas por la serie propia. */
+const DIM_ALPHA = 0.45;
+
 // ─── Modelo ───────────────────────────────────────────────────────────────────
 
 interface Series {
@@ -249,6 +320,8 @@ export class Visual implements IVisual {
     private totalColumns = 0;
     private hasComparison = false;
     private hasHighlights = false;
+    /** Opacidad de cada serie atenuada (separateFocus): 0,45 salvo para conservar la diferencia entre dos series. */
+    private dimAlpha = new Map<string, number>();
     private valueFormat: string | undefined;
     /** Formateadores por cadena de formato: con formato dinámico la cadena cambia fila a fila. */
     private fmtCache = new Map<string, (v: number) => string>();
@@ -557,6 +630,7 @@ export class Visual implements IVisual {
             this.series.push({ key: OTHERS, name: s.othersLabel.trim() || this.t("UI_Others", "Others"), color: s.othersColor || "#C8C6C4",
                 others: true, total: othersTotal, selector: undefined });
         }
+        this.separateFocus(dv, s, look, focusName);
         const keyOfSeries = new Map<string, string>();
         this.series.forEach(se => { if (!se.others) keyOfSeries.set(se.name, se.key); });
 
@@ -608,6 +682,68 @@ export class Visual implements IVisual {
         if (rowFmts.size === 1) { const only = rowFmts.values().next().value; if (only) this.valueFormat = only; }
         this.columns = colOrder.slice(0, MAX_COLUMNS);
         return this.cells.size > 0 && this.series.length > 0;
+    }
+
+    /**
+     * Con serie propia: (1) la atenuación de las demás conserva sus diferencias — si dos series atenuadas quedan casi
+     * iguales (p. ej. la sexta de Signal, que es la primera aclarada), se reparten opacidades algo distintas;
+     * (2) el color del foco no puede confundirse con ninguna otra serie, ni entera ni atenuada: si el de por defecto o
+     * el del estilo coincide (Report theme con el tema TCViz: la primera serie es #2B6CB0, igual que el foco por
+     * defecto), se toma el primero de una lista que se distinga. Un color de foco puesto a mano se respeta siempre.
+     */
+    private separateFocus(dv: DataView | undefined, s: Settings, look: StyleTokens | null, focusName: string): void {
+        this.dimAlpha.clear();
+        const fser = focusName ? this.series.find(se => !se.others && se.name.toLowerCase() === focusName) : undefined;
+        if (!fser) return;
+        const others = this.series.filter(se => se !== fser);
+        const pageBg = look ? look.bg : (/^#[0-9a-f]{6}$/i.test(s.background || "") ? s.background : "#FFFFFF");
+        const op = clamp(s.opacity, 5, 100) / 100;
+        const baseOf = (se: Series) => se.others ? se.color : (s.cellColor || se.color);
+        const dimOf = (c: string, a: number) => lerpColor(pageBg, c, a * op);
+        if (s.dimOthers) {
+            // Coordenadas: cada serie prueba unas pocas opacidades (siempre atenuada, 0,22–0,62) y se queda con la que
+            // más separa el par más parecido. Solo si con 0,45 para todas hay dos series a menos de ΔE 12. Las series con
+            // el mismo color de partida (color fijo de celdas) no cuentan: no se espera distinguirlas por color.
+            const named = others.filter(se => !se.others);
+            const bases = named.map(baseOf);
+            const pairs: [number, number][] = [];
+            for (let i = 0; i < named.length; i++) for (let j = i + 1; j < named.length; j++)
+                if (colorDistance(bases[i], bases[j]) >= 3) pairs.push([i, j]);
+            const score = (al: number[]) => pairs.length
+                ? Math.min(...pairs.map(([i, j]) => colorDistance(dimOf(bases[i], al[i]), dimOf(bases[j], al[j])))) : 99;
+            const al = named.map(() => DIM_ALPHA);
+            if (score(al) < 12) {
+                const OPTS = [DIM_ALPHA, 0.3, 0.62, 0.22];
+                for (let pass = 0; pass < 3; pass++) {
+                    for (let i = 0; i < named.length; i++) {
+                        let bestA = al[i], bestS = -1;
+                        for (const a of OPTS) {
+                            const sc = Math.round(score(al.map((v, k) => k === i ? a : v)));
+                            if (sc > bestS || (sc === bestS && a === DIM_ALPHA)) { bestS = sc; bestA = a; }
+                        }
+                        al[i] = bestA;
+                    }
+                }
+            }
+            named.forEach((se, i) => this.dimAlpha.set(se.key, al[i]));
+        }
+        const userColor = (dv?.metadata?.objects?.["focus"] as any)?.["color"] !== undefined;
+        if (userColor) return;
+        const near = (c: string) => others.length ? Math.min(...others.map(se => {
+            const b = baseOf(se);
+            const dRaw = colorDistance(c, b);
+            const dDim = s.dimOthers ? colorDistance(c, dimOf(b, this.dimAlpha.get(se.key) ?? DIM_ALPHA)) : 99;
+            return Math.min(dRaw, dDim * 1.3);
+        })) : 99;
+        const cands = [s.focusColor || fser.color, look?.plan, "#D9A21B", "#C0392B", "#7A5FA8", "#0E7C86", look ? look.text : "#252423"]
+            .filter((c, i, a): c is string => !!c && /^#[0-9a-f]{6}$/i.test(c) && a.indexOf(c) === i);
+        let best = cands[0], bestD = -1;
+        for (const c of cands) {
+            const d = near(c);
+            if (d >= 20) { best = c; break; }
+            if (d > bestD) { bestD = d; best = c; }
+        }
+        fser.color = best;
     }
 
     private formatOf(col: DataViewValueColumn): string | undefined {
@@ -833,6 +969,55 @@ export class Visual implements IVisual {
         return n <= 1 ? "" : txt.slice(0, n) + "…";
     }
 
+    /** Parte un texto en líneas de ancho maxW; la última, con elipsis si sobra texto. */
+    private wrap(txt: string, size: number, maxW: number, maxLines: number): string[] {
+        const words = txt.split(/\s+/).filter(Boolean);
+        const out: string[] = [];
+        let cur = "";
+        for (let i = 0; i < words.length; i++) {
+            const next = cur ? cur + " " + words[i] : words[i];
+            if (this.textW(next, size) <= maxW || !cur) { cur = next; continue; }
+            if (out.length === maxLines - 1) return out.concat(this.fit(cur + " " + words.slice(i).join(" "), size, maxW)).filter(Boolean);
+            out.push(cur); cur = words[i];
+        }
+        if (cur) out.push(this.fit(cur, size, maxW));
+        return out.filter(Boolean);
+    }
+
+    /**
+     * Reparto de la leyenda horizontal en hasta maxRows filas. Lo que no cabe va en un "+N" al final de la última
+     * fila (se le hace sitio quitando la última muestra si hace falta).
+     */
+    private legendRows(W: number, fl: number, maxRows: number, nameW: number, first?: Series): { filas: { se: Series; x: number }[][]; hidden: Series[]; plusX: number; nameW: number } {
+        const filas: { se: Series; x: number; w: number }[][] = [[]];
+        // En la fila compacta la serie propia va primero: es la que no puede acabar dentro del "+N".
+        const order = first ? [first, ...this.series.filter(x => x !== first)] : this.series;
+        let x = 6, placed = 0;
+        for (const se of order) {
+            const w = fl + 10 + Math.min(nameW, this.textW(se.name, fl));
+            if (x + w > W - 6 && filas[filas.length - 1].length) {
+                if (filas.length === maxRows) break;
+                filas.push([]); x = 6;
+            }
+            filas[filas.length - 1].push({ se, x, w });
+            x += w + 12; placed++;
+        }
+        const last = filas[filas.length - 1];
+        const plusW = (n: number) => this.textW("+" + n, fl) + 4;
+        while (placed < order.length && last.length > 1 && last[last.length - 1].x + last[last.length - 1].w + 10 + plusW(order.length - placed) > W - 6) {
+            last.pop(); placed--;
+        }
+        const end = last.length ? last[last.length - 1].x + last[last.length - 1].w + 10 : 6;
+        return { filas, hidden: order.slice(placed), plusX: end, nameW };
+    }
+
+    /** "+N" de la leyenda, con los nombres que faltan en su title: nunca se pierden series en silencio. */
+    private legendMore(lg: SVGGElement, hidden: Series[], x: number, y: number, fl: number, s: Settings, hc: { on: boolean; fg: string }): void {
+        const t = this.el("text", { x, y: y + fl * 0.35, "font-size": fl, "font-weight": 600, fill: hc.on ? hc.fg : s.legendColor, class: "tcmk-legend-more" }, lg);
+        t.textContent = "+" + hidden.length;
+        this.el("title", {}, t).textContent = hidden.map(h => h.name).join(", ");
+    }
+
     private render(s: Settings, W: number, H: number): void {
         this.clearSvg();
         this.svg.setAttribute("width", String(W));
@@ -841,58 +1026,83 @@ export class Visual implements IVisual {
         const tiny = W < 220 || H < 160;
         let top = 4, bottom = 4, right = 4;
         this.patternDefs(hc);
+        const vertical = s.orientation !== "horizontal";
+
+        // ── Presupuesto de alto (D06). El gráfico (celdas, nombres de columna y eje) conserva al menos el 55 % del alto.
+        // Cuando falta, los adornos ceden en este orden: la frase pasa a una línea con elipsis (completa en su title),
+        // la leyenda se compacta en una fila con "+N" (la serie propia primero; los nombres que faltan, en el title del
+        // "+N"), se ocultan los títulos de eje, después los totales (el ancho de la columna ya dice su tamaño) y por
+        // último la frase. Las celdas no ceden: nunca se pierde nada en silencio.
+        const minChart = H * 0.55;
+        const focus = this.focusSeries(s);
+        const sentences = focus && s.summary && this.panels.length === 1 && !tiny ? this.summaryLines(s, focus) : [];
+        const fs = this.fsz(s.summaryFont, 8, 28), fs2 = Math.max(this.minFont, fs - 1);
+        const fullSum: { text: string; size: number; k: number }[] = [];
+        sentences.forEach((ln, k) => this.wrap(ln, k ? fs2 : fs, W - 12, k ? 2 : 3).forEach(text => fullSum.push({ text, size: k ? fs2 : fs, k })));
+        const one = sentences.length ? this.fit(sentences.join(" "), fs, W - 12) : "";
+        const oneSum = one ? [{ text: one, size: fs, k: 0 }] : [];
+        const sumHeight = (ls: { size: number }[]) => ls.length ? ls.reduce((t, l) => t + l.size + 4, 0) + 6 : 0;
+
+        const legOn = s.legend && this.series.length > 1 && !tiny;
+        const fl = this.fsz(s.legendFont, 6, 30), rowH = fl + 8;
+        const legRight = legOn && s.legendPos === "right" && W > 380;
+        const legFull = legOn && !legRight ? this.legendRows(W, fl, 3, 170) : null;
+        const legCompact = legOn && !legRight ? this.legendRows(W, fl, 1, Math.max(40, Math.min(170, (W - 12) / 3 - fl - 22)), focus) : null;
+        const legHeight = (L: { filas: unknown[] } | null) => L ? L.filas.length * rowH + (s.legendPos === "bottom" ? 4 : 2) : 0;
+
+        const colT = s.colTitle && s.colLabels ? this.axisTitle("col", s) : null;
+        const shareT = s.axisTitle && s.axis ? this.axisTitle("share", s) : null;
+        const bottomT = vertical ? colT : shareT, leftT = vertical ? shareT : colT;
+        const totalsH = vertical && s.totals ? this.fsz(s.totalsFont, 6, 30) + 6 : 0;
+        // Lo que drawMekko reserva siempre dentro del panel (nombres de columna o eje de abajo y márgenes): el 55 % es de las celdas.
+        const fixedH = 4 + (vertical ? (s.colLabels ? this.fsz(s.colFont, 6, 30) + 6 : 0) : (s.axis ? this.fsz(s.axisFont, 6, 24) + 6 : 0));
+
+        let sum = fullSum, leg = legFull, titles = true, totals = true;
+        const chrome = () => 8 + fixedH + sumHeight(sum) + legHeight(leg) + (titles && bottomT ? bottomT.size + 6 : 0) + (totals ? totalsH : 0);
+        const steps: (() => void)[] = [
+            () => { sum = oneSum; },
+            () => { leg = legCompact; },
+            () => { titles = false; },
+            () => { totals = false; },
+            () => { sum = []; },
+        ];
+        for (const step of steps) { if (H - chrome() >= minChart) break; step(); }
 
         // Frase resumen (Pro: serie propia)
-        const focus = this.focusSeries(s);
-        if (focus && s.summary && this.panels.length === 1 && !tiny) {
-            const lines = this.summaryLines(s, focus);
-            const fs = this.fsz(s.summaryFont, 8, 28);
+        if (sum.length) {
             const g = this.el("g", { class: "tcmk-summary" }, this.svg);
             this.subSelectable(g, "focus", this.t("Obj_focus", "Focus series"), powerbi.visuals.SubSelectionStylesType.Text);
-            const fs2 = Math.max(this.minFont, fs - 1);
-            lines.forEach((ln, k) => {
-                const t = this.el("text", { x: 6, y: top + fs * (k + 1) + k * 4, "font-size": k ? fs2 : fs, "font-weight": k ? 400 : 600,
-                    fill: hc.on ? hc.fg : (k ? (this.look() ? this.inkDim() : "#605E5C") : (this.look() ? this.inkMain() : "#252423")) }, g);
-                t.textContent = this.fit(ln, k ? fs2 : fs, W - 12);
-            });
-            top += lines.length * (fs + 4) + 6;
+            // Texto completo para el ratón y el lector de pantalla, aunque se vea recortado
+            this.el("title", {}, g).textContent = sentences.join(" ");
+            let y = top;
+            for (const ln of sum) {
+                y += ln.size;
+                const t = this.el("text", { x: 6, y, "font-size": ln.size, "font-weight": ln.k ? 400 : 600,
+                    fill: hc.on ? hc.fg : (ln.k ? (this.look() ? this.inkDim() : "#605E5C") : (this.look() ? this.inkMain() : "#252423")) }, g);
+                t.textContent = ln.text;
+                y += 4;
+            }
+            top += sumHeight(sum);
         }
 
         // Leyenda
-        if (s.legend && this.series.length > 1 && !tiny) {
+        if (legOn) {
             const lg = this.el("g", { class: "tcmk-legend" }, this.svg);
             this.subSelectable(lg, "legend", this.t("Obj_legend", "Legend"), powerbi.visuals.SubSelectionStylesType.Text);
-            const fl = this.fsz(s.legendFont, 6, 30);
-            const rowH = fl + 8;
-            if (s.legendPos === "right" && W > 380) {
+            if (legRight) {
                 const colW = Math.min(170, Math.max(...this.series.map(x => this.textW(x.name, fl))) + fl + 18);
+                // Las que no caben en el alto, en un "+N" con sus nombres en el title
+                const fit = Math.max(1, Math.floor((H - top - 4) / rowH));
+                const shown = this.series.length > fit ? this.series.slice(0, fit - 1) : this.series;
                 let y = top + rowH / 2;
-                for (const se of this.series) { this.legendItem(lg, se, W - colW, y, fl, s, hc); y += rowH; }
+                for (const se of shown) { this.legendItem(lg, se, W - colW, y, fl, s, hc, 170); y += rowH; }
+                if (shown.length < this.series.length) this.legendMore(lg, this.series.slice(shown.length), W - colW, y, fl, s, hc);
                 right += colW + 6;
-            } else {
-                // Varias filas antes que perder series en silencio; si ni así caben, "+N" al final.
-                const MAX_ROWS = 3;
-                const filas: { se: Series; x: number }[][] = [[]];
-                let x = 6, resto = 0;
-                for (const se of this.series) {
-                    const w = fl + 10 + Math.min(170, this.textW(se.name, fl));
-                    if (x + w > W - 6 && filas[filas.length - 1].length) {
-                        if (filas.length === MAX_ROWS) { resto = this.series.length - filas.reduce((t, f) => t + f.length, 0); break; }
-                        filas.push([]); x = 6;
-                    }
-                    filas[filas.length - 1].push({ se, x });
-                    x += w + 12;
-                }
-                const alto = filas.length * rowH;
+            } else if (leg) {
+                const alto = leg.filas.length * rowH;
                 const y0 = s.legendPos === "bottom" ? H - alto - 2 + rowH / 2 : top + rowH / 2;
-                filas.forEach((f, k) => f.forEach(it => this.legendItem(lg, it.se, it.x, y0 + k * rowH, fl, s, hc)));
-                if (resto) {
-                    const ult = filas[filas.length - 1];
-                    const t = this.el("text", { x: Math.min(W - 30, x), y: y0 + (filas.length - 1) * rowH + fl * 0.35, "font-size": fl,
-                        fill: hc.on ? hc.fg : s.legendColor }, lg);
-                    t.textContent = "+" + resto;
-                    if (!ult.length) t.setAttribute("x", "6");
-                }
+                leg.filas.forEach((f, k) => f.forEach(it => this.legendItem(lg, it.se, it.x, y0 + k * rowH, fl, s, hc, leg.nameW)));
+                if (leg.hidden.length) this.legendMore(lg, leg.hidden, leg.plusX, y0 + (leg.filas.length - 1) * rowH, fl, s, hc);
                 if (s.legendPos === "bottom") bottom += alto + 4; else top += alto + 2;
             }
         }
@@ -900,11 +1110,7 @@ export class Visual implements IVisual {
         // Títulos de eje, una vez para todos los paneles: abajo el eje horizontal y a la izquierda (girado) el vertical.
         // Vertical: columnas abajo y cuota a la izquierda; horizontal, al revés. Si el gráfico quedara sin sitio, no se dibujan.
         let left = 0;
-        {
-            const vertical = s.orientation !== "horizontal";
-            const colT = s.colTitle && s.colLabels ? this.axisTitle("col", s) : null;
-            const shareT = s.axisTitle && s.axis ? this.axisTitle("share", s) : null;
-            const bottomT = vertical ? colT : shareT, leftT = vertical ? shareT : colT;
+        if (titles) {
             const tg = this.el("g", { class: "tcmk-axis-titles", "aria-hidden": "true" }, this.svg);
             if (bottomT && H - top - bottom - (bottomT.size + 6) >= 40) {
                 const t = this.el("text", { x: (W - right) / 2, y: H - bottom - 2, "text-anchor": "middle", "font-size": bottomT.size, "font-weight": 600,
@@ -951,7 +1157,7 @@ export class Visual implements IVisual {
                 titleH = smTitle + 6;
             }
             const pg = this.el("g", { transform: `translate(0,${titleH})` }, g);
-            this.drawMekko(pg, all[pi], s, cellW, cellH - titleH, maxCol, hc, tiny || (panels.length > 4 && cellW < 240));
+            this.drawMekko(pg, all[pi], s, cellW, cellH - titleH, maxCol, hc, tiny || (panels.length > 4 && cellW < 240), !totals);
         });
     }
 
@@ -977,14 +1183,14 @@ export class Visual implements IVisual {
      * Se reserva primero el área de dibujo y los adornos se quitan por orden si no caben.
      */
     private drawMekko(g: SVGGElement, cols: ColDraw[], s: Settings, W: number, H: number, maxCol: number,
-        hc: { on: boolean; fg: string; bg: string; sel: string }, small: boolean): void {
+        hc: { on: boolean; fg: string; bg: string; sel: string }, small: boolean, noTotals = false): void {
         if (!cols.length) return;
         const vertical = s.orientation !== "horizontal";
         const absolute = s.mode === "absolute";
         const grand = cols.reduce((t, c) => t + c.total, 0);
         const fc = this.fsz(s.colFont, 6, 30), ft = this.fsz(s.totalsFont, 6, 30), fa = this.fsz(s.axisFont, 6, 24);
         const focus = this.focusSeries(s);
-        const showTotals = s.totals && !small;
+        const showTotals = s.totals && !small && !noTotals;
         const showAxis = s.axis && !small;
         const longest = Math.max(...cols.map(c => this.textW(c.col, fc, s.colBold)));
 
@@ -1054,11 +1260,12 @@ export class Visual implements IVisual {
                 const w = vertical ? size : len, h = vertical ? len : size;
                 acc += len;
                 const cg = this.el("g", { "data-pt": cell.key, role: "option", tabindex: "-1", class: "tcmk-pt" }, cellsG);
-                const dim = focus && s.dimOthers && se.key !== focus.key;
+                const dim = !!focus && s.dimOthers && se.key !== focus.key;
                 const fill = hc.on ? (se.key === focus?.key ? hc.sel : hc.bg) : this.cellColor(se, cell, s);
+                const alpha = clamp(s.opacity, 5, 100) / 100 * (dim ? (this.dimAlpha.get(se.key) ?? DIM_ALPHA) : 1);
                 const rx = x.toFixed(2), ry = y.toFixed(2), rw = Math.max(0, w).toFixed(2), rh = Math.max(0, h).toFixed(2);
                 this.el("rect", { x: rx, y: ry, width: rw, height: rh, fill, class: "tcmk-hit",
-                    "fill-opacity": hc.on ? 1 : clamp(s.opacity, 5, 100) / 100 * (dim ? 0.45 : 1),
+                    "fill-opacity": hc.on ? 1 : alpha,
                     stroke: hc.on ? hc.fg : (s.borderWidth > 0 ? s.borderColor : "none"), "stroke-width": hc.on ? 1 : clamp(s.borderWidth, 0, 6) }, cg);
                 // Trama encima del color (D10): Others, series sin color o alto contraste
                 const pat = this.patternOf(se, fill, s, hc);
@@ -1074,17 +1281,23 @@ export class Visual implements IVisual {
                     const fl2 = Math.max(this.minFont, fl - 1);
                     const needW = Math.max(this.textW(txt, fl) * (s.labelBold ? 1.08 : 1), chg ? this.textW(chg, fl2) : 0) + 6;
                     if (txt && w >= needW && h >= fl * lines + 4 * lines) {
-                        const col = s.labelColor || (hc.on ? (fill === hc.bg ? hc.fg : this.contrast(fill)) : this.contrast(dim ? this.dimmedUnder(fill) : fill));
+                        // Fondo real de la etiqueta: el relleno mezclado con el fondo según su opacidad (celda atenuada).
+                        const under = hc.on ? fill : this.apparent(fill, alpha);
+                        // En alto contraste, la tinta del tema: primer plano sobre el fondo y fondo sobre el color de selección.
+                        const col = hc.on ? (fill === hc.bg ? hc.fg : hc.bg) : readableInk(s.labelColor, under, !s.labelColor);
                         const cy = y + h / 2 - (lines - 1) * (fl / 2);
                         const t = this.el("text", { x: x + w / 2, y: cy + fl * 0.35, "text-anchor": "middle", "font-size": fl, "font-weight": s.labelBold ? 700 : 400, fill: col }, labelsG);
                         // Sobre una trama, un halo del color de fondo de la celda para que el número se siga leyendo
-                        const halo = pat ? { stroke: hc.on ? (fill === hc.bg ? hc.bg : fill) : fill, "stroke-width": 3, "paint-order": "stroke", "stroke-linejoin": "round" } : null;
+                        const halo = pat ? { stroke: hc.on ? (fill === hc.bg ? hc.bg : fill) : under, "stroke-width": 3, "paint-order": "stroke", "stroke-linejoin": "round" } : null;
                         if (halo) for (const k in halo) t.setAttribute(k, String((halo as any)[k]));
                         t.textContent = txt;
                         if (chg) {
-                            const up = share - cell.cmp / c.cmpTotal >= 0;
+                            // Sin cambio (±0,0) va en la tinta de la etiqueta: ni sube ni baja.
+                            const tone = chg.startsWith("±") ? col : share - cell.cmp / c.cmpTotal >= 0 ? s.posColor : s.negColor;
+                            // Verde/rojo del cambio, con el tono ajustado hasta leerse sobre la celda (contraste ≥ 3,5),
+                            // como en el Treemap; en alto contraste, la tinta del tema.
                             const t2 = this.el("text", { x: x + w / 2, y: cy + fl + 1 + fl * 0.35, "text-anchor": "middle", "font-size": fl2, "font-weight": 600,
-                                fill: hc.on ? col : (s.labelColor || this.contrast(fill) === "#FFFFFF" ? "#FFFFFF" : (up ? s.posColor : s.negColor)) }, labelsG);
+                                fill: hc.on ? col : legibleTone(tone, under) }, labelsG);
                             if (halo) for (const k in halo) t2.setAttribute(k, String((halo as any)[k]));
                             t2.textContent = chg;
                         }
@@ -1146,16 +1359,14 @@ export class Visual implements IVisual {
     }
 
     /**
-     * Color aparente de una celda atenuada (45 % de opacidad) para elegir la tinta de su etiqueta. Sin estilo, el gris
-     * claro de siempre; con estilo, la mezcla con su fondo (en Boardroom y Aurora el fondo es oscuro).
+     * Color aparente de una celda con opacidad alpha: su relleno mezclado con el fondo (el del estilo; en Boardroom y
+     * Aurora es oscuro; sin estilo, el fondo del visual o blanco). Es el fondo real sobre el que se lee su etiqueta.
      */
-    private dimmedUnder(fill: string): string {
+    private apparent(fill: string, alpha: number): string {
+        if (alpha >= 0.999 || !hexToRgb(fill)) return fill;
         const look = this.look();
-        const a = /^#?([0-9a-f]{6})$/i.exec(fill || ""), b = look ? /^#?([0-9a-f]{6})$/i.exec(look.bg) : null;
-        if (!a || !b) return "#E8E8E8";
-        const x = parseInt(a[1], 16), y = parseInt(b[1], 16);
-        const mix = (sh: number) => Math.round(((x >> sh) & 255) * 0.45 + ((y >> sh) & 255) * 0.55);
-        return "#" + ((1 << 24) + (mix(16) << 16) + (mix(8) << 8) + mix(0)).toString(16).slice(1);
+        const bg = look ? look.bg : (hexToRgb(this.s.background || "") ? this.s.background : "#FFFFFF");
+        return lerpColor(bg, fill, alpha);
     }
 
     /** Texto blanco o casi negro según la luminancia del fondo. */
@@ -1167,7 +1378,7 @@ export class Visual implements IVisual {
         return L < 0.6 ? "#FFFFFF" : "#252423";
     }
 
-    private legendItem(lg: SVGGElement, se: Series, x: number, y: number, fl: number, s: Settings, hc: { on: boolean; fg: string }): void {
+    private legendItem(lg: SVGGElement, se: Series, x: number, y: number, fl: number, s: Settings, hc: { on: boolean; fg: string }, nameW = 170): void {
         const it = this.el("g", { "data-series": se.key, cursor: se.others ? "default" : "pointer" }, lg);
         // Con serie propia, la muestra va atenuada como sus celdas: si no, una serie del mismo color que el foco se confunde con él.
         const focus = this.focusSeries(s);
@@ -1176,12 +1387,13 @@ export class Visual implements IVisual {
         const hcf = this.hc();
         const isFocus = !!focus && focus.key === se.key;
         const fill = hc.on ? (isFocus ? hcf.sel : hcf.bg) : (se.others || isFocus ? se.color : (s.cellColor || se.color));
-        this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill, "fill-opacity": hc.on || !dim ? 1 : 0.45,
+        this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill, "fill-opacity": hc.on || !dim ? 1 : (this.dimAlpha.get(se.key) ?? DIM_ALPHA),
             stroke: hc.on ? hc.fg : "none", "stroke-width": 1 }, it);
         const pat = this.patternOf(se, fill, s, hcf);
         if (pat) this.el("rect", { x, y: y - fl / 2, width: fl, height: fl, rx: 2, fill: pat, "pointer-events": "none", class: "tcmk-pat" }, it);
         const t = this.el("text", { x: x + fl + 5, y: y + fl * 0.35, "font-size": fl, fill: hc.on ? hc.fg : s.legendColor }, it);
-        t.textContent = this.fit(se.name, fl, 170);
+        t.textContent = this.fit(se.name, fl, nameW);
+        if (t.textContent !== se.name) this.el("title", {}, it).textContent = se.name;
         it.addEventListener("click", (e) => {
             if (this.formatMode) return;
             e.stopPropagation();
