@@ -80,6 +80,13 @@ GOOD TO KNOW
   tooltip and totals.
 - Write the focus series exactly as it appears in the data; a note says so if no series has that name.
 - Narrow columns hide their labels and shorten their names; the full name is in the tooltip.
+- Cell labels and column labels can be bold (Cell labels -> Bold, Column labels -> Bold).
+- In a small slot the cells keep at least 55% of the height: the summary sentence folds to one line (full text on
+  hover), the legend to one row with "+N" (focus series first; hover "+N" for the rest), then axis titles and column
+  totals step aside.
+- If the focus colour is too close to another series, the focus series takes a colour that stands apart. A focus
+  colour you pick yourself is always kept. With more series than the style has colours, the next ones take a
+  lighter or darker shade of the same palette.
 - In Power BI Desktop the visual uses the rows Power BI sends at once; a warning icon says so when the data is cut.
 
 FREE AND PRO
