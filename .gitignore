@@ -5,3 +5,4 @@ _releases/
 webpack.statistics.*.html
 tools/__pycache__/
 *.pbix
+tools/simulador/__pycache__/
